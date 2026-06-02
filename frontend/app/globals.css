@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+:root {
+  /* Base palette */
+  --bg: #0d0d12;
+  --bg-surface: #13131a;
+  --bg-elevated: #1a1a24;
+  --border: rgba(255, 255, 255, 0.07);
+  --text-primary: #e8e6e1;
+  --text-secondary: #8a8794;
+  --text-muted: #4a4857;
+
+  /* Mood accent colors — activated by the music engine in Phase 6 */
+  --mood-joy: #f5c842;
+  --mood-sadness: #5b7fa6;
+  --mood-fear: #7b5ea7;
+  --mood-anger: #c0392b;
+  --mood-romance: #c2677d;
+  --mood-neutral: #6e7a8a;
+
+  /* Active mood (default: neutral) */
+  --mood-active: var(--mood-neutral);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--bg-surface);
+  --color-elevated: var(--bg-elevated);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-accent: var(--mood-active);
+}
+
+html {
+  background-color: var(--bg);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--mood-active) 30%, transparent);
+}
