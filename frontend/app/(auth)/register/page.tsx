@@ -21,7 +21,14 @@ export default function RegisterPage() {
       await api.post('/auth/register', { email, password })
       router.push('/login')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+      const errMsg = err instanceof Error ? err.message : 'Registration failed'
+      if (errMsg.includes('already registered') || errMsg.includes('409')) {
+        setError('This email is already registered. Sign in instead.')
+      } else if (errMsg.includes('Password must be')) {
+        setError('Password must be at least 8 characters')
+      } else {
+        setError('Registration failed. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

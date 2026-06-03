@@ -28,7 +28,13 @@ export default function LoginPage() {
       setToken(data.access_token)
       router.push('/')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      setPassword('')
+      const errMsg = err instanceof Error ? err.message : 'Login failed'
+      if (errMsg.includes('Invalid credentials') || errMsg.includes('401')) {
+        setError('Invalid email or password')
+      } else {
+        setError('Sign in failed. Please try again.')
+      }
     } finally {
       setLoading(false)
     }

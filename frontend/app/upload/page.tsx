@@ -1,11 +1,22 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { isLoggedIn } from '@/lib/auth'
 import { api } from '@/lib/api'
 
 export default function UploadPage() {
   const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
+
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      router.push('/login')
+    } else {
+      setAuthChecked(true)
+    }
+  }, [router])
   const [title, setTitle] = useState('')
   const [author, setAuthor] = useState('')
   const [fileName, setFileName] = useState('')
@@ -47,16 +58,27 @@ export default function UploadPage() {
       return
     }
 
-    setLoading(true)
-    setError('')
-
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
     const file = fileInput?.files?.[0]
     if (!file) {
-      setError('File not found')
-      setLoading(false)
+      setError('Please select a file')
       return
     }
+
+    const ext = file.name.split('.').pop()?.toLowerCase()
+    if (!ext || !['pdf', 'epub'].includes(ext)) {
+      setError(`File must be PDF or EPUB, not .${ext}`)
+      return
+    }
+
+    if (file.size > 52_428_800) {
+      setError('File size must not exceed 50MB')
+      return
+    }
+
+    setLoading(true)
+    setProgress(0)
+    setError('')
 
     const formData = new FormData()
     formData.append('file', file)
@@ -75,14 +97,28 @@ export default function UploadPage() {
       if (xhr.status === 201) {
         router.push('/dashboard')
       } else {
-        setError('Upload failed')
+        try {
+          const err = JSON.parse(xhr.responseText)
+          const detail = err.detail || 'Upload failed'
+          if (detail.includes('Invalid file type')) {
+            setError(`File must be PDF or EPUB, not .${ext}`)
+          } else if (detail.includes('too large')) {
+            setError('File size must not exceed 50MB')
+          } else {
+            setError('Upload failed. Please try again.')
+          }
+        } catch {
+          setError('Upload failed. Please try again.')
+        }
         setLoading(false)
+        setProgress(0)
       }
     }
 
     xhr.onerror = () => {
-      setError('Upload error')
+      setError('Network error. Please check your connection and try again.')
       setLoading(false)
+      setProgress(0)
     }
 
     xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/books/upload`)
@@ -94,12 +130,25 @@ export default function UploadPage() {
     xhr.send(formData)
   }
 
+  if (!authChecked) {
+    return (
+      <main className="flex items-center justify-center min-h-screen">
+        <p style={{ color: "var(--text-secondary)" }}>Loading…</p>
+      </main>
+    )
+  }
+
   return (
     <main className="flex flex-col items-center justify-center min-h-screen px-6 gap-8">
       <div className="w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-2" style={{ fontFamily: "var(--font-lora), serif" }}>
-          Upload Book
-        </h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora), serif", margin: 0 }}>
+            Upload Book
+          </h1>
+          <Link href="/dashboard" className="auth-link-btn" style={{ whiteSpace: "nowrap", marginLeft: "12px" }}>
+            ← Back
+          </Link>
+        </div>
         <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", textAlign: "center" }} className="mb-8">
           PDF or EPUB files only. Max 50MB.
         </p>
@@ -173,8 +222,8 @@ export default function UploadPage() {
             />
           </div>
 
-          {progress > 0 && progress < 100 && (
-            <div>
+          {loading && (
+            <div style={{ opacity: progress > 0 ? 1 : 0.6, transition: "opacity 200ms" }}>
               <div style={{
                 width: "100%",
                 height: "6px",
@@ -184,15 +233,15 @@ export default function UploadPage() {
               }}>
                 <div
                   style={{
-                    width: `${progress}%`,
+                    width: `${progress || 5}%`,
                     height: "100%",
                     backgroundColor: "var(--accent)",
-                    transition: "width 200ms",
+                    transition: "width 200ms ease-out",
                   }}
                 />
               </div>
               <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "6px", textAlign: "center" }}>
-                {progress}%
+                {progress > 0 ? `${progress}%` : "Preparing…"}
               </p>
             </div>
           )}
