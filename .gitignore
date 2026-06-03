@@ -3,15 +3,16 @@ backend/.env
 frontend/.env.local
 
 # Python
-backend/.venv/
-backend/__pycache__/
-backend/*.pyc
-backend/*.pyo
-backend/*.egg-info/
-backend/.pytest_cache/
-backend/.coverage
-backend/dist/
-backend/build/
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.pytest_cache/
+.coverage
+dist/
+build/
 
 # Node
 frontend/node_modules/

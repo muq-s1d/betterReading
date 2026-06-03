@@ -27,7 +27,6 @@ export default function Dashboard() {
       router.push('/login')
       return
     }
-
     fetchBooks()
   }, [router])
 
@@ -50,111 +49,62 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <main className="flex items-center justify-center min-h-screen">
-        <p style={{ color: "var(--text-secondary)" }}>Loading...</p>
-      </main>
+      <div className="library-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Loading…</p>
+      </div>
     )
   }
 
   return (
-    <main className="min-h-screen px-6 py-8" style={{ backgroundColor: "var(--bg-primary)" }}>
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora), serif" }}>
-            My Books
-          </h1>
-          <div className="flex gap-3">
-            <Link href="/upload" className="auth-link-btn">
-              + Upload
-            </Link>
-            <button onClick={handleLogout} className="auth-link-btn" style={{ backgroundColor: "transparent", color: "var(--accent)", border: "1px solid var(--accent)" }}>
-              Sign out
-            </button>
-          </div>
+    <div className="library-page">
+      <header className="library-header">
+        <span className="library-brand">betterReading</span>
+        <nav className="library-nav">
+          <Link href="/upload" className="btn-icon">+ Upload</Link>
+          <button onClick={handleLogout} className="btn-icon">Sign out</button>
+        </nav>
+      </header>
+
+      <div className="library-body">
+        <div className="library-heading">
+          <h1>My Library</h1>
+          {books.length > 0 && (
+            <span className="library-count">
+              {books.length} {books.length === 1 ? 'book' : 'books'}
+            </span>
+          )}
         </div>
 
         {error && (
-          <p style={{ color: "#ef4444", padding: "12px", backgroundColor: "rgba(239,68,68,0.1)", borderRadius: "6px", marginBottom: "16px" }}>
-            {error}
-          </p>
+          <p className="upload-error" style={{ marginBottom: '1.5rem' }}>{error}</p>
         )}
 
-        {books.length === 0 ? (
-          <div style={{
-            textAlign: "center",
-            padding: "48px 24px",
-            backgroundColor: "var(--bg-secondary)",
-            borderRadius: "8px",
-          }}>
-            <p style={{ fontSize: "1.1rem", color: "var(--text-secondary)", marginBottom: "16px" }}>
-              No books yet
-            </p>
-            <Link href="/upload" className="auth-link-btn">
-              Upload your first book
-            </Link>
-          </div>
-        ) : (
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "16px",
-          }}>
-            {books.map((book) => (
-              <div
-                key={book.id}
-                style={{
-                  padding: "16px",
-                  backgroundColor: "var(--bg-secondary)",
-                  borderRadius: "8px",
-                  border: "1px solid var(--border-color)",
-                }}
-              >
-                <h2 style={{
-                  fontSize: "1rem",
-                  fontWeight: 600,
-                  marginBottom: "8px",
-                  lineHeight: "1.3",
-                }}>
-                  {book.title}
-                </h2>
-                {book.author && (
-                  <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", marginBottom: "8px" }}>
-                    by {book.author}
-                  </p>
-                )}
-                <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
-                  <span style={{
-                    fontSize: "0.75rem",
-                    padding: "4px 8px",
-                    backgroundColor: "var(--accent)",
-                    color: "white",
-                    borderRadius: "4px",
-                    fontWeight: 500,
-                  }}>
-                    {book.file_format.toUpperCase()}
-                  </span>
-                  <span style={{
-                    fontSize: "0.75rem",
-                    padding: "4px 8px",
-                    backgroundColor: book.status === "ready" ? "#10b981" : "#f59e0b",
-                    color: "white",
-                    borderRadius: "4px",
-                    fontWeight: 500,
-                  }}>
+        <div className="library-grid">
+          {books.length === 0 ? (
+            <div className="library-empty">
+              <p className="library-empty-title">Your shelf is empty</p>
+              <p className="library-empty-sub">Upload a book to get started</p>
+              <Link href="/upload" className="btn-primary">Upload your first book</Link>
+            </div>
+          ) : (
+            books.map((book) => (
+              <div key={book.id} className="book-card">
+                <div className="book-glyph">{book.title.charAt(0).toUpperCase()}</div>
+                <p className="book-title">{book.title}</p>
+                {book.author && <p className="book-author">{book.author}</p>}
+                <div className="book-meta">
+                  <span className="book-format">{book.file_format.toUpperCase()}</span>
+                  <span className={`book-status ${book.status}`}>
+                    <span className="book-status-dot" />
                     {book.status}
                   </span>
+                  <span className="book-size">{(book.file_size / 1024 / 1024).toFixed(1)} MB</span>
                 </div>
-                <p style={{
-                  fontSize: "0.85rem",
-                  color: "var(--text-secondary)",
-                }}>
-                  {(book.file_size / 1024 / 1024).toFixed(1)} MB
-                </p>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </div>
-    </main>
+    </div>
   )
 }

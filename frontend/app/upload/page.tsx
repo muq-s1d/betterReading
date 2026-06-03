@@ -4,11 +4,16 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { isLoggedIn } from '@/lib/auth'
-import { api } from '@/lib/api'
 
 export default function UploadPage() {
   const router = useRouter()
   const [authChecked, setAuthChecked] = useState(false)
+  const [title, setTitle] = useState('')
+  const [author, setAuthor] = useState('')
+  const [file, setFile] = useState<File | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -17,17 +22,11 @@ export default function UploadPage() {
       setAuthChecked(true)
     }
   }, [router])
-  const [title, setTitle] = useState('')
-  const [author, setAuthor] = useState('')
-  const [fileName, setFileName] = useState('')
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
     if (f) {
-      setFileName(f.name)
+      setFile(f)
       setError('')
     }
   }
@@ -46,20 +45,13 @@ export default function UploadPage() {
     e.currentTarget.classList.remove('drag-over')
     const f = e.dataTransfer.files?.[0]
     if (f) {
-      setFileName(f.name)
+      setFile(f)
       setError('')
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!fileName) {
-      setError('Please select a file')
-      return
-    }
-
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
-    const file = fileInput?.files?.[0]
     if (!file) {
       setError('Please select a file')
       return
@@ -87,9 +79,9 @@ export default function UploadPage() {
 
     const xhr = new XMLHttpRequest()
 
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) {
-        setProgress(Math.round((e.loaded / e.total) * 100))
+    xhr.upload.onprogress = (ev) => {
+      if (ev.lengthComputable) {
+        setProgress(Math.round((ev.loaded / ev.total) * 100))
       }
     }
 
@@ -123,154 +115,111 @@ export default function UploadPage() {
 
     xhr.open('POST', `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'}/books/upload`)
     const token = localStorage.getItem('br_token')
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`)
-    }
-
+    if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`)
     xhr.send(formData)
   }
 
   if (!authChecked) {
     return (
-      <main className="flex items-center justify-center min-h-screen">
-        <p style={{ color: "var(--text-secondary)" }}>Loading…</p>
-      </main>
+      <div className="library-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Loading…</p>
+      </div>
     )
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-6 gap-8">
-      <div className="w-full max-w-md">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-lora), serif", margin: 0 }}>
-            Upload Book
-          </h1>
-          <Link href="/dashboard" className="auth-link-btn" style={{ whiteSpace: "nowrap", marginLeft: "12px" }}>
-            ← Back
-          </Link>
-        </div>
-        <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", textAlign: "center" }} className="mb-8">
-          PDF or EPUB files only. Max 50MB.
-        </p>
+    <div className="upload-page">
+      <header className="upload-header">
+        <span className="upload-brand">betterReading</span>
+        <Link href="/dashboard" className="btn-icon">← Back</Link>
+      </header>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <div className="upload-body">
+        <form onSubmit={handleSubmit} className="upload-form">
+          <div className="upload-form-header">
+            <h1 className="upload-form-title">Upload a book</h1>
+            <p className="upload-form-sub">PDF or EPUB · Max 50 MB</p>
+          </div>
+
           <div
+            className="upload-zone"
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            style={{
-              border: "2px dashed var(--border-color)",
-              borderRadius: "8px",
-              padding: "32px 16px",
-              textAlign: "center",
-              cursor: "pointer",
-              transition: "all 200ms",
-            }}
-            className="drop-zone"
           >
             <input
               type="file"
               accept=".pdf,.epub"
               onChange={handleFilePick}
-              style={{ display: "none" }}
+              style={{ display: 'none' }}
               id="file-input"
             />
-            <label htmlFor="file-input" style={{ cursor: "pointer", display: "block" }}>
-              <div style={{ fontSize: "1.5rem", marginBottom: "8px" }}>📄</div>
-              <p style={{ fontWeight: 500, marginBottom: "4px" }}>Drag file here or click to browse</p>
-              {fileName && <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>{fileName}</p>}
+            <label htmlFor="file-input" className="upload-zone-label">
+              <span className="upload-zone-icon">📄</span>
+              {file ? (
+                <p className="upload-zone-filename">{file.name}</p>
+              ) : (
+                <>
+                  <p className="upload-zone-primary">Drop file here or click to browse</p>
+                  <p className="upload-zone-hint">PDF or EPUB accepted</p>
+                </>
+              )}
             </label>
           </div>
 
-          <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, marginBottom: "6px" }}>
-              Title (optional)
+          <div className="upload-field">
+            <label htmlFor="title" className="upload-label">
+              Title <span className="upload-label-opt">(optional)</span>
             </label>
             <input
+              id="title"
+              className="upload-input"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Leave blank to auto-detect from file"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid var(--border-color)",
-                borderRadius: "6px",
-                fontSize: "0.95rem",
-                boxSizing: "border-box",
-              }}
+              placeholder="Auto-detected from file"
             />
           </div>
 
-          <div>
-            <label style={{ display: "block", fontSize: "0.9rem", fontWeight: 500, marginBottom: "6px" }}>
-              Author (optional)
+          <div className="upload-field">
+            <label htmlFor="author" className="upload-label">
+              Author <span className="upload-label-opt">(optional)</span>
             </label>
             <input
+              id="author"
+              className="upload-input"
               type="text"
               value={author}
               onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Leave blank to auto-detect from file"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid var(--border-color)",
-                borderRadius: "6px",
-                fontSize: "0.95rem",
-                boxSizing: "border-box",
-              }}
+              placeholder="Auto-detected from file"
             />
           </div>
 
           {loading && (
-            <div style={{ opacity: progress > 0 ? 1 : 0.6, transition: "opacity 200ms" }}>
-              <div style={{
-                width: "100%",
-                height: "6px",
-                backgroundColor: "var(--bg-secondary)",
-                borderRadius: "3px",
-                overflow: "hidden",
-              }}>
+            <div className="upload-progress">
+              <div className="upload-progress-track">
                 <div
-                  style={{
-                    width: `${progress || 5}%`,
-                    height: "100%",
-                    backgroundColor: "var(--accent)",
-                    transition: "width 200ms ease-out",
-                  }}
+                  className="upload-progress-fill"
+                  style={{ width: `${progress || 5}%` }}
                 />
               </div>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", marginTop: "6px", textAlign: "center" }}>
-                {progress > 0 ? `${progress}%` : "Preparing…"}
+              <p className="upload-progress-label">
+                {progress > 0 ? `${progress}%` : 'Preparing…'}
               </p>
             </div>
           )}
 
-          {error && (
-            <p style={{ color: "#ef4444", fontSize: "0.9rem", padding: "8px 12px", backgroundColor: "rgba(239,68,68,0.1)", borderRadius: "4px" }}>
-              {error}
-            </p>
-          )}
+          {error && <p className="upload-error">{error}</p>}
 
           <button
             type="submit"
-            disabled={loading || !fileName}
-            style={{
-              padding: "10px 16px",
-              backgroundColor: loading || !fileName ? "var(--border-color)" : "var(--accent)",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-              cursor: loading || !fileName ? "not-allowed" : "pointer",
-              opacity: loading || !fileName ? 0.6 : 1,
-            }}
+            className="upload-submit"
+            disabled={loading || !file}
           >
-            {loading ? "Uploading..." : "Upload"}
+            {loading ? 'Uploading…' : 'Upload book'}
           </button>
         </form>
       </div>
-    </main>
+    </div>
   )
 }
