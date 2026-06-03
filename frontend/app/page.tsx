@@ -15,16 +15,36 @@ export default function Home() {
   }, [router])
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen px-6 gap-6">
-      <h1
-        className="text-4xl tracking-tight"
-        style={{ fontFamily: "var(--font-lora), serif" }}
-      >
-        betterReading
-      </h1>
-      <div className="flex gap-4">
-        <Link href="/login" className="auth-link-btn">Sign in</Link>
-        <Link href="/register" className="auth-link-btn">Register</Link>
+    <main className="landing">
+      <div className="landing-glow" />
+
+      <div className="landing-inner">
+        <p className="landing-eyebrow">AI-Powered E-Reader</p>
+
+        <h1 className="landing-title">
+          better<em>Reading</em>
+        </h1>
+
+        <div className="landing-rule" />
+
+        <p className="landing-tagline">
+          Upload any book.<br />
+          We read the mood.<br />
+          The music follows.
+        </p>
+
+        <div className="landing-cta">
+          <Link href="/login" className="btn-primary">Sign in</Link>
+          <Link href="/register" className="btn-ghost">Get started</Link>
+        </div>
+      </div>
+
+      <div className="landing-footer">
+        <span className="landing-feat">PDF &amp; EPUB</span>
+        <span className="landing-sep">·</span>
+        <span className="landing-feat">NLP Analysis</span>
+        <span className="landing-sep">·</span>
+        <span className="landing-feat">Mood Music</span>
       </div>
     </main>
   )
