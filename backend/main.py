@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import auth, books, mood, progress
+from backend.routers import auth, books, mood, progress
 
 app = FastAPI(title="betterReading API", version="0.1.0")
 

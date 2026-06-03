@@ -10,3 +10,7 @@ bcrypt==4.0.1
 python-jose[cryptography]==3.3.0
 python-multipart==0.0.19
 httpx>=0.26,<0.28
+pdfplumber==0.11.9
+ebooklib==0.18
+beautifulsoup4==4.12.3
+filetype==1.2.0

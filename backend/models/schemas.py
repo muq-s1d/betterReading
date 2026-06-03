@@ -28,3 +28,13 @@ class UserOut(BaseModel):
     id: str
     email: str
     created_at: datetime
+
+
+class BookOut(BaseModel):
+    id: str
+    title: str
+    author: str | None
+    file_format: str
+    file_size: int
+    status: str
+    created_at: datetime

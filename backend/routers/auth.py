@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status
-from models.schemas import UserRegister, UserLogin, TokenResponse, UserOut
-from models.database import supabase
-from services.auth import hash_password, verify_password, create_token
+from backend.models.schemas import UserRegister, UserLogin, TokenResponse, UserOut
+from backend.models.database import supabase
+from backend.services.auth import hash_password, verify_password, create_token
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
