@@ -1,6 +1,6 @@
 # Implementation Plan
 
-## Phase 1: Project Scaffold
+## Phase 1: Project Scaffold ✓
 - Initialize Next.js frontend
 - Initialize FastAPI backend
 - Set up Supabase project (get DB URL + storage bucket)
@@ -8,7 +8,7 @@
 - Basic folder structure in place
 - Environment variables configured (.env files)
 
-## Phase 2: Auth System
+## Phase 2: Auth System ✓
 - User registration endpoint (FastAPI)
 - User login endpoint with JWT token
 - Password hashing (bcrypt)
@@ -16,18 +16,19 @@
 - Login + Register pages (Next.js)
 - Store JWT in localStorage / cookie
 
-## Phase 3: Book Upload
+## Phase 3: Book Upload ✓
 - Upload endpoint (FastAPI) — accepts PDF/EPUB
 - Save file to Supabase Storage
 - Save book metadata to `books` table
 - Upload UI (Next.js) — drag and drop or file picker
 - Book list page showing uploaded books
+- Frontend redesign: noir library aesthetic, unified CSS variable system
 
 ## Phase 4: Text Extraction + NLP Pipeline
-- PDF text extraction using PyMuPDF
-- EPUB text extraction using ebooklib
+- PDF text extraction using pdfplumber (already installed)
+- EPUB text extraction using ebooklib (already installed)
 - Text chunking logic (split by paragraph or fixed token size)
-- Integrate DistilBERT emotion classifier
+- Integrate DistilBERT emotion classifier via HuggingFace
 - Run extraction + classification as FastAPI BackgroundTask after upload
 - Save mood timeline to `mood_timelines` table
 

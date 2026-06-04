@@ -14,3 +14,7 @@ pdfplumber==0.11.9
 ebooklib==0.18
 beautifulsoup4==4.12.3
 filetype==1.2.0
+transformers==4.44.2
+accelerate>=0.26.0
+# torch (CPU-only) must be installed separately:
+# pip install torch --index-url https://download.pytorch.org/whl/cpu

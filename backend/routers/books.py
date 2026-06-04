@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status, Depends
+from fastapi import APIRouter, BackgroundTasks, UploadFile, File, Form, HTTPException, status, Depends
 from uuid import uuid4
 import filetype
 
@@ -7,12 +7,14 @@ from backend.models.database import supabase
 from backend.services.storage import upload_book, delete_book
 from backend.services.extractor import get_pdf_metadata, get_epub_metadata
 from backend.services.auth import get_current_user
+from backend.services.pipeline import run_pipeline
 
 router = APIRouter(prefix="/books", tags=["books"])
 
 
 @router.post("/upload", response_model=BookOut, status_code=201)
 async def upload_book_endpoint(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     title: str = Form(default=""),
     author: str = Form(default=""),
@@ -27,10 +29,14 @@ async def upload_book_endpoint(
         raise HTTPException(status_code=400, detail="Invalid file extension")
 
     guess = filetype.guess(file_bytes)
-    if not guess or guess.mime not in ["application/pdf", "application/epub+zip"]:
+    allowed_mimes = ["application/pdf", "application/epub+zip", "application/zip"]
+    if not guess or guess.mime not in allowed_mimes:
         raise HTTPException(status_code=400, detail="Invalid file type")
 
-    ext = "pdf" if guess.mime == "application/pdf" else "epub"
+    if guess.mime == "application/pdf":
+        ext = "pdf"
+    else:
+        ext = "epub"
 
     try:
         if ext == "pdf":
@@ -67,6 +73,7 @@ async def upload_book_endpoint(
         await delete_book(file_path)
         raise HTTPException(status_code=500, detail=f"Database insert failed: {str(e)}")
 
+    background_tasks.add_task(run_pipeline, book_id, file_path, ext)
     return result.data[0]
 
 
