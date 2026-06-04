@@ -38,3 +38,16 @@ class BookOut(BaseModel):
     file_size: int
     status: str
     created_at: datetime
+    processing_error: str | None = None
+
+
+class MoodChunk(BaseModel):
+    chunk_index: int
+    emotion: str
+    confidence: float
+
+
+class MoodTimeline(BaseModel):
+    book_id: str
+    total_chunks: int
+    timeline: list[MoodChunk]
