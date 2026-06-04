@@ -43,3 +43,6 @@ SPEC.md
 AGENTS.md
 **/CLAUDE.md
 **/AGENTS.md
+
+# Local docs (not part of codebase)
+docs/
