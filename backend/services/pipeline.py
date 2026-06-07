@@ -42,6 +42,7 @@ def run_pipeline(book_id: str, file_path: str, file_format: str) -> None:
                 "chunk_index": r["chunk_index"],
                 "emotion": r["emotion"],
                 "confidence": r["confidence"],
+                "text": chunks[r["chunk_index"]],
             }
             for r in results
         ]

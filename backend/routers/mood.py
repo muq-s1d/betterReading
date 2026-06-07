@@ -19,7 +19,7 @@ async def get_mood_timeline(book_id: str, user_id: str = Depends(get_current_use
 
     rows = (
         supabase.table("mood_timelines")
-        .select("chunk_index, emotion, confidence")
+        .select("chunk_index, emotion, confidence, text")
         .eq("book_id", book_id)
         .order("chunk_index")
         .execute()

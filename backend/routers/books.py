@@ -81,3 +81,15 @@ async def upload_book_endpoint(
 async def list_books(user_id: str = Depends(get_current_user)):
     result = supabase.table("books").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
     return result.data
+
+
+@router.delete("/{book_id}", status_code=204)
+async def delete_book_endpoint(book_id: str, user_id: str = Depends(get_current_user)):
+    book = supabase.table("books").select("id, user_id, file_path").eq("id", book_id).single().execute()
+    if not book.data or book.data["user_id"] != user_id:
+        raise HTTPException(status_code=404, detail="Book not found")
+    try:
+        await delete_book(book.data["file_path"])
+    except Exception:
+        pass  # storage deletion failed (file may already be gone); proceed to clean up DB
+    supabase.table("books").delete().eq("id", book_id).execute()
