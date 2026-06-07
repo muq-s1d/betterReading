@@ -45,9 +45,19 @@ class MoodChunk(BaseModel):
     chunk_index: int
     emotion: str
     confidence: float
+    text: str | None = None
 
 
 class MoodTimeline(BaseModel):
     book_id: str
     total_chunks: int
     timeline: list[MoodChunk]
+
+
+class ProgressIn(BaseModel):
+    scroll_percent: float
+
+
+class ProgressOut(BaseModel):
+    book_id: str
+    scroll_percent: float

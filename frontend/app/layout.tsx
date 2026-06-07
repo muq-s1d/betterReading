@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Lora, DM_Sans } from "next/font/google";
+import { Lora, DM_Sans, Merriweather, EB_Garamond, Source_Code_Pro } from "next/font/google";
 import "./globals.css";
 
 const lora = Lora({
@@ -10,6 +10,22 @@ const lora = Lora({
 const dmSans = DM_Sans({
   subsets: ["latin"],
   variable: "--font-dm-sans",
+});
+
+const merriweather = Merriweather({
+  subsets: ["latin"],
+  weight: ["300", "400", "700"],
+  variable: "--font-merriweather",
+});
+
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  variable: "--font-garamond",
+});
+
+const sourceCodePro = Source_Code_Pro({
+  subsets: ["latin"],
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -25,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${lora.variable} ${dmSans.variable}`}
+      className={`${lora.variable} ${dmSans.variable} ${merriweather.variable} ${ebGaramond.variable} ${sourceCodePro.variable}`}
       style={{ fontFamily: "var(--font-dm-sans), sans-serif" }}
     >
       <body className="min-h-screen flex flex-col">{children}</body>

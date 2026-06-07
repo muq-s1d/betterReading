@@ -39,6 +39,20 @@ async function requestRaw<T>(
   return res.json() as Promise<T>;
 }
 
+async function requestEmpty(path: string, options: RequestInit = {}): Promise<void> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    ...(options.headers as Record<string, string>),
+  };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(error || res.statusText);
+  }
+}
+
 export const api = {
   get: <T>(path: string, init?: RequestInit) =>
     request<T>(path, { method: "GET", ...init }),
@@ -54,4 +68,6 @@ export const api = {
       body: formData,
       ...init,
     }),
+  delete: (path: string, init?: RequestInit) =>
+    requestEmpty(path, { method: "DELETE", ...init }),
 };
