@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from backend.models.schemas import MoodChunk, MoodTimeline
 from backend.models.database import supabase
 from backend.services.auth import get_current_user
+from backend.services.nlp import smooth_emotions
 
 router = APIRouter(prefix="/mood", tags=["mood"])
 
@@ -24,10 +25,15 @@ async def get_mood_timeline(book_id: str, user_id: str = Depends(get_current_use
         .order("chunk_index")
         .execute()
     )
+    smoothed = smooth_emotions([row["emotion"] for row in rows.data])
+    timeline = [
+        {**row, "smoothed_emotion": smoothed[i]}
+        for i, row in enumerate(rows.data)
+    ]
     return {
         "book_id": book_id,
-        "total_chunks": len(rows.data),
-        "timeline": rows.data,
+        "total_chunks": len(timeline),
+        "timeline": timeline,
     }
 
 

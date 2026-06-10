@@ -16,6 +16,7 @@ interface MoodChunk {
   emotion: string
   confidence: number
   text: string | null
+  smoothed_emotion?: string | null
 }
 
 interface MoodTimeline {
@@ -50,7 +51,6 @@ export default function ReaderPage() {
   const [settings, setSettings] = useState<ReaderSettings>(() => loadSettings())
   const [headerShown, setHeaderShown] = useState(true)
 
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const didRestore = useRef(false)
   const docScrollPctRef = useRef(0)
   const lastScrollY = useRef(0)
@@ -96,19 +96,13 @@ export default function ReaderPage() {
     }
   }, [loading, timeline, savedScrollPct])
 
-  // Track document scroll % for progress bar and saving
+  // Track document scroll % for progress bar (local only — no DB write here)
   useEffect(() => {
     function onScroll() {
       const max = document.documentElement.scrollHeight - window.innerHeight
       const pct = max > 0 ? (window.scrollY / max) * 100 : 0
       docScrollPctRef.current = pct
       setDocScrollPct(pct)
-
-      // Debounced save
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => {
-        api.post(`/progress/${bookId}`, { scroll_percent: pct }).catch(() => null)
-      }, 3000)
 
       // Smart header
       if (window.scrollY < 80) {
@@ -124,13 +118,26 @@ export default function ReaderPage() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [bookId])
 
-  // Flush progress on unmount
+  // Save progress when the user leaves: switches tabs, closes the tab/browser,
+  // or navigates away within the app. `keepalive` lets the request complete
+  // even after the page starts unloading.
   useEffect(() => {
-    return () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
+    function saveProgress() {
       if (docScrollPctRef.current > 0) {
-        api.post(`/progress/${bookId}`, { scroll_percent: docScrollPctRef.current }).catch(() => null)
+        api.post(`/progress/${bookId}`, { scroll_percent: docScrollPctRef.current }, { keepalive: true }).catch(() => null)
       }
+    }
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'hidden') saveProgress()
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('pagehide', saveProgress)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('pagehide', saveProgress)
+      saveProgress()
     }
   }, [bookId])
 
@@ -144,7 +151,7 @@ export default function ReaderPage() {
   }
 
   const currentChunk = timeline[currentIndex]
-  const currentEmotion = currentChunk?.emotion ?? 'Neutral'
+  const currentEmotion = currentChunk?.smoothed_emotion ?? currentChunk?.emotion ?? 'Neutral'
   const hasText = timeline.some((c) => c.text)
 
   const readerStyle: React.CSSProperties = {

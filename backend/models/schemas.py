@@ -46,6 +46,7 @@ class MoodChunk(BaseModel):
     emotion: str
     confidence: float
     text: str | None = None
+    smoothed_emotion: str | None = None
 
 
 class MoodTimeline(BaseModel):

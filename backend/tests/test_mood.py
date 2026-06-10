@@ -1,5 +1,12 @@
 from unittest.mock import MagicMock, patch
 from .conftest import TEST_USER_ID, TEST_BOOK_ID
+from backend.services.nlp import smooth_emotions
+
+
+def test_smooth_emotions_absorbs_isolated_blip():
+    raw = ["Tension", "Tension", "Neutral", "Tension", "Tension", "Fear", "Fear", "Fear"]
+    expected = ["Tension", "Tension", "Tension", "Tension", "Tension", "Fear", "Fear", "Fear"]
+    assert smooth_emotions(raw) == expected
 
 
 def _book_ready(user_id=TEST_USER_ID):
@@ -29,6 +36,8 @@ def test_get_mood_timeline_ok(client, mock_supabase):
     assert data["total_chunks"] == 2
     assert data["timeline"][0]["emotion"] == "Joy"
     assert data["timeline"][0]["text"] == "She laughed."
+    assert data["timeline"][0]["smoothed_emotion"] == "Joy"
+    assert data["timeline"][1]["smoothed_emotion"] == "Fear"
 
 
 def test_get_mood_timeline_wrong_owner(client, mock_supabase):
