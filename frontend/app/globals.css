@@ -1306,3 +1306,35 @@ html {
   border-color: var(--text-muted);
   background: var(--bg-surface);
 }
+
+/* Music settings controls */
+
+.rs-music-controls {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.rs-music-btn {
+  flex: 1;
+  padding: 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  line-height: 1;
+}
+
+.rs-music-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.rs-music-btn.active {
+  background: color-mix(in srgb, var(--mood-active) 20%, var(--bg-elevated));
+  border-color: var(--mood-active);
+  color: var(--mood-active);
+}

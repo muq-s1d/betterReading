@@ -9,7 +9,10 @@ import { moodColor } from '@/lib/moods'
 import MoodBadge from '@/components/MoodBadge'
 import ReaderChunk from '@/components/ReaderChunk'
 import ReaderSettingsPanel from '@/components/ReaderSettings'
+import MusicSettingsPanel from '@/components/MusicSettings'
 import { loadSettings, saveSettings, fontCssVar, ReaderSettings } from '@/lib/reader-settings'
+import { loadMusicSettings, saveMusicSettings, MusicSettings } from '@/lib/music'
+import { useMoodPlayer } from '@/lib/useMoodPlayer'
 
 interface MoodChunk {
   chunk_index: number
@@ -49,6 +52,8 @@ export default function ReaderPage() {
   const [docScrollPct, setDocScrollPct] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings, setSettings] = useState<ReaderSettings>(() => loadSettings())
+  const [musicSettingsOpen, setMusicSettingsOpen] = useState(false)
+  const [musicSettings, setMusicSettings] = useState<MusicSettings>(() => loadMusicSettings())
   const [headerShown, setHeaderShown] = useState(true)
 
   const didRestore = useRef(false)
@@ -150,9 +155,16 @@ export default function ReaderPage() {
     saveSettings(s)
   }
 
+  function handleMusicSettingsChange(s: MusicSettings) {
+    setMusicSettings(s)
+    saveMusicSettings(s)
+  }
+
   const currentChunk = timeline[currentIndex]
   const currentEmotion = currentChunk?.smoothed_emotion ?? currentChunk?.emotion ?? 'Neutral'
   const hasText = timeline.some((c) => c.text)
+
+  useMoodPlayer(currentEmotion, musicSettings)
 
   const readerStyle: React.CSSProperties = {
     fontFamily: fontCssVar(settings.fontFamily),
@@ -213,6 +225,14 @@ export default function ReaderPage() {
         )}
         <button
           className="reader-settings-btn"
+          onClick={() => setMusicSettingsOpen((o) => !o)}
+          aria-label="Music settings"
+          title="Music settings"
+        >
+          🎵
+        </button>
+        <button
+          className="reader-settings-btn"
           onClick={() => setSettingsOpen((o) => !o)}
           aria-label="Reader settings"
           title="Reader settings"
@@ -249,6 +269,14 @@ export default function ReaderPage() {
       )}
 
       {hasText && <MoodBadge emotion={currentEmotion} />}
+
+      {musicSettingsOpen && (
+        <MusicSettingsPanel
+          settings={musicSettings}
+          onChange={handleMusicSettingsChange}
+          onClose={() => setMusicSettingsOpen(false)}
+        />
+      )}
 
       {settingsOpen && (
         <ReaderSettingsPanel

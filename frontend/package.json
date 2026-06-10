@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.107.0",
+    "howler": "^2.2.4",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"
@@ -20,6 +21,7 @@
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
+    "@types/howler": "^2.2.11",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
