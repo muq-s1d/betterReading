@@ -43,7 +43,7 @@ export const MOOD_TRACKS: Record<string, string[]> = {
   'Peace/Calm': ['/music/peace-calm/track-1.mp3', '/music/peace-calm/track-2.mp3', '/music/peace-calm/track-3.mp3'],
   'Anticipation': ['/music/anticipation/track-1.mp3', '/music/anticipation/track-2.mp3', '/music/anticipation/track-3.mp3'],
   'Disgust': ['/music/disgust/track-1.mp3', '/music/disgust/track-2.mp3', '/music/disgust/track-3.mp3'],
-  'Neutral': ['/music/neutral/track-1.mp3', '/music/neutral/track-2.mp3', '/music/neutral/track-3.mp3'],
+  'Neutral': ['/music/neutral/track-1.mp3', '/music/neutral/track-2.mp3', '/music/neutral/track-3.mp3', '/music/neutral/track-4.mp3', '/music/neutral/track-5.mp3'],
 }
 
 export function pickTrack(emotion: string, exclude?: string): string {
