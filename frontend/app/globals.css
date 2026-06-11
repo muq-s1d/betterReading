@@ -983,8 +983,10 @@ html {
 
 .reader-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
   flex: 1;
   padding: 5rem 2rem;
 }
@@ -992,6 +994,28 @@ html {
 .reader-loading-text {
   font-size: 0.8rem;
   color: var(--text-muted);
+}
+
+.reader-loading-bar {
+  width: 160px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.reader-loading-bar-fill {
+  width: 40%;
+  height: 100%;
+  background: var(--mood-active, #8b5cf6);
+  border-radius: 2px;
+  animation: reader-loading-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes reader-loading-slide {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(150%); }
+  100% { transform: translateX(150%); }
 }
 
 /* Dashboard reading progress label */
@@ -1337,4 +1361,47 @@ html {
   background: color-mix(in srgb, var(--mood-active) 20%, var(--bg-elevated));
   border-color: var(--mood-active);
   color: var(--mood-active);
+}
+
+.rs-warning-backdrop {
+  z-index: 1100;
+}
+
+.rs-warning-modal {
+  background: var(--bg-elevated);
+  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
+  border-radius: 8px;
+  padding: 1.25rem;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.rs-warning-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.rs-warning-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 1rem;
+}
+
+.rs-warning-dismiss {
+  width: 100%;
+  padding: 0.6rem;
+  background: color-mix(in srgb, #f0a500 20%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rs-warning-dismiss:hover {
+  background: color-mix(in srgb, #f0a500 30%, var(--bg-surface));
 }

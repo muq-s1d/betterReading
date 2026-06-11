@@ -164,7 +164,18 @@ export default function ReaderPage() {
   const currentEmotion = currentChunk?.smoothed_emotion ?? currentChunk?.emotion ?? 'Neutral'
   const hasText = timeline.some((c) => c.text)
 
-  useMoodPlayer(currentEmotion, musicSettings)
+  const { isLoading: musicLoading, currentTrackMood } = useMoodPlayer(currentEmotion, musicSettings)
+  const [musicReady, setMusicReady] = useState(false)
+
+  useEffect(() => {
+    if (!musicSettings.enabled) {
+      setMusicReady(true)
+      return
+    }
+    if (!musicLoading && currentTrackMood) {
+      setMusicReady(true)
+    }
+  }, [musicLoading, currentTrackMood, musicSettings.enabled])
 
   const readerStyle: React.CSSProperties = {
     fontFamily: fontCssVar(settings.fontFamily),
@@ -179,6 +190,7 @@ export default function ReaderPage() {
       <div className="reader-page">
         <div className="reader-loading">
           <p className="reader-loading-text">Opening book…</p>
+          <div className="reader-loading-bar"><div className="reader-loading-bar-fill" /></div>
         </div>
       </div>
     )
@@ -193,6 +205,17 @@ export default function ReaderPage() {
           <Link href="/dashboard" className="btn-ghost" style={{ marginTop: '0.75rem' }}>
             ← Back to Library
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (!musicReady) {
+    return (
+      <div className="reader-page">
+        <div className="reader-loading">
+          <p className="reader-loading-text">Preparing soundtrack…</p>
+          <div className="reader-loading-bar"><div className="reader-loading-bar-fill" /></div>
         </div>
       </div>
     )

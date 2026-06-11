@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Howl } from 'howler'
-import { MusicSettings, pickTrack } from './music'
+import { MOOD_TRACKS, MusicSettings, pickRandomStart, pickTrack, PREFETCH_COUNT } from './music'
 
 const CROSSFADE_MS = 2500
 const MOOD_CHANGE_DEBOUNCE_MS = 2000
 const FADE_STEP_MS = CROSSFADE_MS / 50
+const PRELOAD_CACHE_LIMIT = 4
 
 interface UseMoodPlayerState {
   isLoading: boolean
@@ -20,6 +21,9 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
   const currentHowlRef = useRef<Howl | null>(null)
   const nextHowlRef = useRef<Howl | null>(null)
   const lastPlayedTrackRef = useRef<string>('')
+  const currentTrackSrcRef = useRef<string>('')
+  const nextTrackSrcRef = useRef<string>('')
+  const preloadCacheRef = useRef<Map<string, Howl>>(new Map())
   const moodChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fadeIntervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
   const lastMoodRef = useRef(currentEmotion)
@@ -28,6 +32,10 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
 
   const cleanup = (howl: Howl | null) => {
     if (howl) {
+      // Strip listeners first — unload() can async-fire 'loaderror'/'load'
+      // for in-flight requests, and we don't want stale callbacks acting
+      // on a Howl instance we've already discarded.
+      howl.off()
       howl.stop()
       howl.unload()
     }
@@ -42,40 +50,74 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
     fadeIntervalsRef.current.delete(id)
   }
 
-  const startCrossfade = (newTrack: string, newMood: string) => {
+  const preloadTrack = (src: string) => {
+    if (preloadCacheRef.current.has(src)) return
+    if (currentTrackSrcRef.current === src || nextTrackSrcRef.current === src) return
+
+    if (preloadCacheRef.current.size >= PRELOAD_CACHE_LIMIT) {
+      const oldestKey = preloadCacheRef.current.keys().next().value
+      if (oldestKey) {
+        cleanup(preloadCacheRef.current.get(oldestKey) || null)
+        preloadCacheRef.current.delete(oldestKey)
+      }
+    }
+
+    preloadCacheRef.current.set(src, new Howl({ src, loop: true, volume: 0, preload: true }))
+  }
+
+  const prefetchUpcoming = (mood: string, exclude: string) => {
+    const tracks = MOOD_TRACKS[mood] || MOOD_TRACKS['Neutral']
+    tracks
+      .filter((t) => t !== exclude)
+      .slice(0, PREFETCH_COUNT)
+      .forEach(preloadTrack)
+  }
+
+  const startCrossfade = (newTrack: string, newMood: string, attempt = 0) => {
     // Discard any in-flight load for a previous mood change
     if (nextHowlRef.current) {
       cleanup(nextHowlRef.current)
       nextHowlRef.current = null
+      nextTrackSrcRef.current = ''
     }
 
     setState({ isLoading: true, currentTrackMood: newMood })
 
-    const newHowl = new Howl({
-      src: newTrack,
-      loop: true,
-      volume: 0,
-      preload: true,
-    })
+    // Reuse a prefetched instance if we already preloaded this track
+    let newHowl = preloadCacheRef.current.get(newTrack)
+    if (newHowl) {
+      preloadCacheRef.current.delete(newTrack)
+    } else {
+      newHowl = new Howl({
+        src: newTrack,
+        loop: true,
+        volume: 0,
+        preload: true,
+      })
+    }
 
     nextHowlRef.current = newHowl
+    nextTrackSrcRef.current = newTrack
 
-    newHowl.on('load', () => {
+    const onReady = () => {
       // If superseded by a newer crossfade while loading, discard silently
       if (nextHowlRef.current !== newHowl) {
-        cleanup(newHowl)
+        cleanup(newHowl!)
         return
       }
 
       const oldHowl = currentHowlRef.current
 
-      newHowl.play()
+      // Skip the typically-slow intro by starting somewhere in the first 20-40s
+      const duration = newHowl!.duration()
+      newHowl!.seek(pickRandomStart(duration))
+      newHowl!.play()
 
       const fadeInInterval: ReturnType<typeof setInterval> = setInterval(() => {
-        const current = newHowl.volume()
+        const current = newHowl!.volume()
         const target = settingsRef.current.muted ? 0 : settingsRef.current.volume
         if (current < target) {
-          newHowl.volume(Math.min(current + 0.05, target))
+          newHowl!.volume(Math.min(current + 0.05, target))
         } else {
           clearTrackedInterval(fadeInInterval)
         }
@@ -95,19 +137,42 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
         trackInterval(fadeOutInterval)
       }
 
-      currentHowlRef.current = newHowl
+      currentHowlRef.current = newHowl!
+      currentTrackSrcRef.current = newTrack
       nextHowlRef.current = null
+      nextTrackSrcRef.current = ''
       lastPlayedTrackRef.current = newTrack
       setState({ isLoading: false, currentTrackMood: newMood })
-    })
+
+      // Warm up a couple of likely-next tracks for this mood so a future
+      // crossfade doesn't have to wait on a cold fetch
+      prefetchUpcoming(newMood, newTrack)
+    }
+
+    if (newHowl.state() === 'loaded') {
+      onReady()
+    } else {
+      newHowl.once('load', onReady)
+    }
 
     newHowl.on('loaderror', () => {
       console.error(`Failed to load track: ${newTrack}`)
       if (nextHowlRef.current === newHowl) {
         nextHowlRef.current = null
+        nextTrackSrcRef.current = ''
       }
-      setState({ isLoading: false, currentTrackMood: null })
-      cleanup(newHowl)
+      cleanup(newHowl!)
+
+      const tracks = MOOD_TRACKS[newMood] || MOOD_TRACKS['Neutral']
+      if (attempt < tracks.length - 1) {
+        const fallback = pickTrack(newMood, newTrack)
+        startCrossfade(fallback, newMood, attempt + 1)
+        return
+      }
+
+      // All tracks for this mood failed — give up but don't leave the
+      // reader stuck waiting for a track that will never load.
+      setState({ isLoading: false, currentTrackMood: newMood })
     })
   }
 
@@ -182,6 +247,8 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       fadeIntervalsRef.current.clear()
       cleanup(currentHowlRef.current)
       cleanup(nextHowlRef.current)
+      preloadCacheRef.current.forEach((howl) => cleanup(howl))
+      preloadCacheRef.current.clear()
     }
   }, [])
 

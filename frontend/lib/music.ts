@@ -46,6 +46,17 @@ export const MOOD_TRACKS: Record<string, string[]> = {
   'Neutral': ['/music/neutral/track-1.mp3', '/music/neutral/track-2.mp3', '/music/neutral/track-3.mp3', '/music/neutral/track-4.mp3', '/music/neutral/track-5.mp3'],
 }
 
+export const TRACK_RANDOM_START_MIN_S = 20
+export const TRACK_RANDOM_START_MAX_S = 40
+export const PREFETCH_COUNT = 2
+
+export function pickRandomStart(durationSeconds: number): number {
+  if (!durationSeconds || durationSeconds <= 0) return 0
+  const maxStart = Math.min(TRACK_RANDOM_START_MAX_S, durationSeconds * 0.5)
+  const minStart = Math.min(TRACK_RANDOM_START_MIN_S, maxStart)
+  return minStart + Math.random() * (maxStart - minStart)
+}
+
 export function pickTrack(emotion: string, exclude?: string): string {
   const tracks = MOOD_TRACKS[emotion] || MOOD_TRACKS['Neutral']
   if (tracks.length === 1) return tracks[0]

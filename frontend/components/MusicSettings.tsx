@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { MusicSettings } from '@/lib/music'
 
 interface Props {
@@ -11,12 +11,14 @@ interface Props {
 
 export default function MusicSettingsPanel({ settings, onChange, onClose }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
+  const warningRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
     function onPointer(e: MouseEvent) {
+      if (warningRef.current?.contains(e.target as Node)) return
       if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose()
     }
     document.addEventListener('keydown', onKey)
@@ -28,6 +30,13 @@ export default function MusicSettingsPanel({ settings, onChange, onClose }: Prop
   }, [onClose])
 
   const volumePercent = Math.round(settings.volume * 100)
+  const [warningDismissed, setWarningDismissed] = useState(false)
+
+  useEffect(() => {
+    if (volumePercent <= 75) setWarningDismissed(false)
+  }, [volumePercent <= 75]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const showVolumeWarning = volumePercent > 75 && !warningDismissed
 
   return (
     <div className="rs-backdrop">
@@ -74,6 +83,21 @@ export default function MusicSettingsPanel({ settings, onChange, onClose }: Prop
           </div>
         </section>
       </div>
+
+      {showVolumeWarning && (
+        <div className="rs-backdrop rs-warning-backdrop">
+          <div ref={warningRef} className="rs-warning-modal" role="alertdialog" aria-label="Volume warning">
+            <p className="rs-warning-title">Volume is quite high</p>
+            <p className="rs-warning-text">
+              Music above 75% can pull focus away from your reading. Consider lowering it for a more
+              balanced background.
+            </p>
+            <button className="rs-warning-dismiss" onClick={() => setWarningDismissed(true)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
