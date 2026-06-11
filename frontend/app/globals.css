@@ -1363,13 +1363,18 @@ html {
   color: var(--mood-active);
 }
 
-.rs-warning-backdrop {
+.rs-warning-backdrop,
+.rs-notice-backdrop {
   z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.rs-warning-modal {
+.rs-warning-modal,
+.rs-notice-modal {
+  pointer-events: all;
   background: var(--bg-elevated);
-  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
   border-radius: 8px;
   padding: 1.25rem;
   max-width: 320px;
@@ -1377,17 +1382,43 @@ html {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-.rs-warning-title {
+.rs-warning-modal {
+  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
+}
+
+.rs-notice-modal {
+  border: 1px solid color-mix(in srgb, var(--mood-active, #8b5cf6) 45%, var(--border));
+}
+
+.rs-warning-title,
+.rs-notice-title {
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 0.5rem;
 }
 
-.rs-warning-text {
+.rs-warning-text,
+.rs-notice-text {
   font-size: 0.85rem;
   color: var(--text-secondary);
   line-height: 1.5;
   margin: 0 0 1rem;
+}
+
+.rs-notice-dismiss {
+  width: 100%;
+  padding: 0.6rem;
+  background: color-mix(in srgb, var(--mood-active, #8b5cf6) 20%, var(--bg-surface));
+  border: 1px solid color-mix(in srgb, var(--mood-active, #8b5cf6) 45%, var(--border));
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.rs-notice-dismiss:hover {
+  background: color-mix(in srgb, var(--mood-active, #8b5cf6) 30%, var(--bg-surface));
 }
 
 .rs-warning-dismiss {
