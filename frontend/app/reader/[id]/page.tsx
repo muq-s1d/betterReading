@@ -59,12 +59,15 @@ export default function ReaderPage() {
   const didRestore = useRef(false)
   const docScrollPctRef = useRef(0)
   const lastScrollY = useRef(0)
+  const didLoadRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!isLoggedIn()) {
       router.push('/login')
       return
     }
+    if (didLoadRef.current === bookId) return
+    didLoadRef.current = bookId
     load()
   }, [bookId]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -164,8 +167,9 @@ export default function ReaderPage() {
   const currentEmotion = currentChunk?.smoothed_emotion ?? currentChunk?.emotion ?? 'Neutral'
   const hasText = timeline.some((c) => c.text)
 
-  const { isLoading: musicLoading, currentTrackMood } = useMoodPlayer(currentEmotion, musicSettings)
+  const { isLoading: musicLoading, currentTrackMood, autoplayBlocked } = useMoodPlayer(currentEmotion, musicSettings)
   const [musicReady, setMusicReady] = useState(false)
+  const [autoplayNoticeDismissed, setAutoplayNoticeDismissed] = useState(false)
 
   useEffect(() => {
     if (!musicSettings.enabled) {
@@ -176,6 +180,15 @@ export default function ReaderPage() {
       setMusicReady(true)
     }
   }, [musicLoading, currentTrackMood, musicSettings.enabled])
+
+  // Safety net: never let a music-loading hiccup permanently block the
+  // reader — open the book regardless after a short timeout, music can
+  // keep loading/retrying quietly in the background.
+  useEffect(() => {
+    if (musicReady) return
+    const timeout = setTimeout(() => setMusicReady(true), 8000)
+    return () => clearTimeout(timeout)
+  }, [musicReady])
 
   const readerStyle: React.CSSProperties = {
     fontFamily: fontCssVar(settings.fontFamily),
@@ -292,6 +305,21 @@ export default function ReaderPage() {
       )}
 
       {hasText && <MoodBadge emotion={currentEmotion} />}
+
+      {autoplayBlocked && !autoplayNoticeDismissed && (
+        <div className="rs-backdrop rs-notice-backdrop">
+          <div className="rs-notice-modal" role="alertdialog" aria-label="Music paused">
+            <p className="rs-notice-title">Music paused</p>
+            <p className="rs-notice-text">
+              Your browser blocked the soundtrack from starting automatically. Open 🎵 Music
+              settings and press play to resume.
+            </p>
+            <button className="rs-notice-dismiss" onClick={() => setAutoplayNoticeDismissed(true)}>
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {musicSettingsOpen && (
         <MusicSettingsPanel

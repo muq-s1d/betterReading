@@ -4,8 +4,13 @@ export interface MusicSettings {
   muted: boolean
 }
 
+// Music defaults to off: browsers block audio autoplay until the user
+// interacts with the page, so starting enabled would either silently fail
+// to play or force us to hold the reader open waiting on a track that
+// can't play yet. Starting off lets the user opt in via a real click,
+// which satisfies the browser's autoplay gesture requirement immediately.
 export const DEFAULT_MUSIC_SETTINGS: MusicSettings = {
-  enabled: true,
+  enabled: false,
   volume: 0.5,
   muted: false,
 }

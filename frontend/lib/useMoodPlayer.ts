@@ -7,6 +7,11 @@ const MOOD_CHANGE_DEBOUNCE_MS = 2000
 const FADE_STEP_MS = CROSSFADE_MS / 50
 const PRELOAD_CACHE_LIMIT = 4
 
+const DEBUG = process.env.NODE_ENV !== 'production'
+const debug = (...args: unknown[]) => {
+  if (DEBUG) console.debug('[music]', ...args)
+}
+
 interface UseMoodPlayerState {
   isLoading: boolean
   currentTrackMood: string | null
@@ -17,6 +22,7 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
     isLoading: false,
     currentTrackMood: null,
   })
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false)
 
   const currentHowlRef = useRef<Howl | null>(null)
   const nextHowlRef = useRef<Howl | null>(null)
@@ -29,6 +35,8 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
   const lastMoodRef = useRef(currentEmotion)
   const settingsRef = useRef(settings)
   settingsRef.current = settings
+  const hasInteractedRef = useRef(false)
+  const pendingPlaybackRef = useRef<(() => void) | null>(null)
 
   const cleanup = (howl: Howl | null) => {
     if (howl) {
@@ -62,7 +70,7 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       }
     }
 
-    preloadCacheRef.current.set(src, new Howl({ src, loop: true, volume: 0, preload: true }))
+    preloadCacheRef.current.set(src, new Howl({ src, loop: true, volume: 0, preload: true, html5: true }))
   }
 
   const prefetchUpcoming = (mood: string, exclude: string) => {
@@ -73,7 +81,14 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       .forEach(preloadTrack)
   }
 
-  const startCrossfade = (newTrack: string, newMood: string, attempt = 0) => {
+  const startCrossfade = (
+    newTrack: string,
+    newMood: string,
+    triedTracks: Set<string> = new Set(),
+    neutralFallbackUsed = false
+  ) => {
+    debug('startCrossfade', newTrack, newMood, 'tried=', [...triedTracks], 'neutralFallback=', neutralFallbackUsed)
+
     // Discard any in-flight load for a previous mood change
     if (nextHowlRef.current) {
       cleanup(nextHowlRef.current)
@@ -93,6 +108,7 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
         loop: true,
         volume: 0,
         preload: true,
+        html5: true,
       })
     }
 
@@ -100,6 +116,8 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
     nextTrackSrcRef.current = newTrack
 
     const onReady = () => {
+      debug('onReady', newTrack, newMood)
+
       // If superseded by a newer crossfade while loading, discard silently
       if (nextHowlRef.current !== newHowl) {
         cleanup(newHowl!)
@@ -111,30 +129,47 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       // Skip the typically-slow intro by starting somewhere in the first 20-40s
       const duration = newHowl!.duration()
       newHowl!.seek(pickRandomStart(duration))
-      newHowl!.play()
 
-      const fadeInInterval: ReturnType<typeof setInterval> = setInterval(() => {
-        const current = newHowl!.volume()
-        const target = settingsRef.current.muted ? 0 : settingsRef.current.volume
-        if (current < target) {
-          newHowl!.volume(Math.min(current + 0.05, target))
-        } else {
-          clearTrackedInterval(fadeInInterval)
-        }
-      }, FADE_STEP_MS)
-      trackInterval(fadeInInterval)
+      const beginPlayback = () => {
+        newHowl!.play()
 
-      if (oldHowl) {
-        const fadeOutInterval: ReturnType<typeof setInterval> = setInterval(() => {
-          const current = oldHowl.volume()
-          if (current > 0) {
-            oldHowl.volume(Math.max(current - 0.05, 0))
+        const fadeInInterval: ReturnType<typeof setInterval> = setInterval(() => {
+          const current = newHowl!.volume()
+          const target = settingsRef.current.muted ? 0 : settingsRef.current.volume
+          if (current < target) {
+            newHowl!.volume(Math.min(current + 0.05, target))
           } else {
-            clearTrackedInterval(fadeOutInterval)
-            cleanup(oldHowl)
+            clearTrackedInterval(fadeInInterval)
           }
         }, FADE_STEP_MS)
-        trackInterval(fadeOutInterval)
+        trackInterval(fadeInInterval)
+
+        if (oldHowl) {
+          const fadeOutInterval: ReturnType<typeof setInterval> = setInterval(() => {
+            const current = oldHowl.volume()
+            if (current > 0) {
+              oldHowl.volume(Math.max(current - 0.05, 0))
+            } else {
+              clearTrackedInterval(fadeOutInterval)
+              cleanup(oldHowl)
+            }
+          }, FADE_STEP_MS)
+          trackInterval(fadeOutInterval)
+        }
+      }
+
+      // On a hard reload, the page has had no user interaction yet and
+      // browsers block audio playback until it does. Defer playback (and
+      // tell the reader to show a prompt) until the user's first
+      // click/tap/keypress, instead of calling .play() now and having it
+      // silently fail with no event we can reliably react to.
+      if (!hasInteractedRef.current) {
+        debug('deferring playback until user interaction', newTrack, newMood)
+        setAutoplayBlocked(true)
+        pendingPlaybackRef.current = beginPlayback
+        if (oldHowl) cleanup(oldHowl)
+      } else {
+        beginPlayback()
       }
 
       currentHowlRef.current = newHowl!
@@ -155,23 +190,45 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       newHowl.once('load', onReady)
     }
 
+    // Fallback: if .play() is somehow still blocked despite a recorded user
+    // interaction (rare), at least don't spam the console with an unhandled
+    // rejection.
+    newHowl.once('playerror', () => {
+      debug('playerror', newTrack, newMood)
+    })
+
     newHowl.on('loaderror', () => {
       console.error(`Failed to load track: ${newTrack}`)
+      debug('loaderror', newTrack, newMood)
       if (nextHowlRef.current === newHowl) {
         nextHowlRef.current = null
         nextTrackSrcRef.current = ''
       }
       cleanup(newHowl!)
 
+      const updatedTried = new Set(triedTracks)
+      updatedTried.add(newTrack)
+
       const tracks = MOOD_TRACKS[newMood] || MOOD_TRACKS['Neutral']
-      if (attempt < tracks.length - 1) {
-        const fallback = pickTrack(newMood, newTrack)
-        startCrossfade(fallback, newMood, attempt + 1)
+      const remaining = tracks.filter((t) => !updatedTried.has(t))
+      if (remaining.length > 0) {
+        const fallback = remaining[Math.floor(Math.random() * remaining.length)]
+        startCrossfade(fallback, newMood, updatedTried, neutralFallbackUsed)
         return
       }
 
-      // All tracks for this mood failed — give up but don't leave the
-      // reader stuck waiting for a track that will never load.
+      // Every track for this mood has failed — try one Neutral track
+      // before giving up entirely.
+      if (!neutralFallbackUsed && newMood !== 'Neutral') {
+        const neutralTracks = MOOD_TRACKS['Neutral']
+        const fallback = neutralTracks[Math.floor(Math.random() * neutralTracks.length)]
+        startCrossfade(fallback, newMood, updatedTried, true)
+        return
+      }
+
+      // All tracks (including Neutral fallback) failed — give up but don't
+      // leave the reader stuck waiting for a track that will never load.
+      debug('giving up on music for mood', newMood)
       setState({ isLoading: false, currentTrackMood: newMood })
     })
   }
@@ -227,6 +284,30 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
     }, MOOD_CHANGE_DEBOUNCE_MS)
   }, [currentEmotion, settings.enabled]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Track the user's first interaction since this page loaded — needed to
+  // know whether .play() is allowed yet (browsers block audio autoplay
+  // until the user has interacted with the document, e.g. after a hard
+  // reload). Once they interact, run any playback we deferred.
+  useEffect(() => {
+    if (hasInteractedRef.current) return
+    const markInteracted = () => {
+      debug('user interacted — resuming any deferred playback')
+      hasInteractedRef.current = true
+      setAutoplayBlocked(false)
+      document.removeEventListener('pointerdown', markInteracted)
+      document.removeEventListener('keydown', markInteracted)
+      const pending = pendingPlaybackRef.current
+      pendingPlaybackRef.current = null
+      pending?.()
+    }
+    document.addEventListener('pointerdown', markInteracted, { once: true })
+    document.addEventListener('keydown', markInteracted, { once: true })
+    return () => {
+      document.removeEventListener('pointerdown', markInteracted)
+      document.removeEventListener('keydown', markInteracted)
+    }
+  }, [])
+
   // Volume / mute changes apply live to whatever is currently playing
   useEffect(() => {
     if (settings.muted || settings.volume === 0) {
@@ -237,16 +318,24 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
     }
   }, [settings.volume, settings.muted]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Teardown on unmount
+  // Teardown on unmount (also runs for React's dev-mode mount/cleanup/remount
+  // cycle, so refs must be reset to null — otherwise a re-mount sees stale,
+  // listener-stripped Howl instances and never restarts playback).
   useEffect(() => {
     return () => {
+      debug('teardown')
       if (moodChangeTimeoutRef.current) {
         clearTimeout(moodChangeTimeoutRef.current)
       }
+      moodChangeTimeoutRef.current = null
       fadeIntervalsRef.current.forEach((id) => clearInterval(id))
       fadeIntervalsRef.current.clear()
       cleanup(currentHowlRef.current)
       cleanup(nextHowlRef.current)
+      currentHowlRef.current = null
+      nextHowlRef.current = null
+      currentTrackSrcRef.current = ''
+      nextTrackSrcRef.current = ''
       preloadCacheRef.current.forEach((howl) => cleanup(howl))
       preloadCacheRef.current.clear()
     }
@@ -255,5 +344,6 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
   return {
     isLoading: state.isLoading,
     currentTrackMood: state.currentTrackMood,
+    autoplayBlocked,
   }
 }
