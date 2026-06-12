@@ -41,6 +41,7 @@ export default function MusicSettingsPanel({ settings, onChange, onClose }: Prop
   return (
     <div className="rs-backdrop">
       <div ref={panelRef} className="rs-panel" role="dialog" aria-label="Music settings">
+        <span className="rs-handle" aria-hidden="true" />
         <div className="rs-header">
           <span className="rs-title">Music settings</span>
           <button className="rs-close" onClick={onClose} aria-label="Close">✕</button>
@@ -67,7 +68,9 @@ export default function MusicSettingsPanel({ settings, onChange, onClose }: Prop
         </section>
 
         <section className="rs-section">
-          <p className="rs-label">Volume — {volumePercent}%</p>
+          <p className="rs-label">
+            Volume <span className="rs-value">{volumePercent}%</span>
+          </p>
           <input
             type="range"
             min={0}
@@ -87,6 +90,8 @@ export default function MusicSettingsPanel({ settings, onChange, onClose }: Prop
       {showVolumeWarning && (
         <div className="rs-backdrop rs-warning-backdrop">
           <div ref={warningRef} className="rs-warning-modal" role="alertdialog" aria-label="Volume warning">
+            <span className="rs-modal-badge rs-badge-alert" aria-hidden="true" />
+            <p className="rs-modal-eyebrow">Listening comfort</p>
             <p className="rs-warning-title">Volume is quite high</p>
             <p className="rs-warning-text">
               Music above 75% can pull focus away from your reading. Consider lowering it for a more

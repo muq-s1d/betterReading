@@ -1294,10 +1294,12 @@ html {
 
 .reader-body {
   flex: 1;
-  max-width: 680px;
   width: 100%;
   margin: 0 auto;
-  padding: 3rem 2rem 8rem;
+  padding-top: 3rem;
+  padding-bottom: 8rem;
+  /* Centering padding = the measure. Floor keeps a safe gutter on phones. */
+  padding-inline: max(1.5rem, calc((100% - var(--reader-max, 680px)) / 2));
   font-family: var(--font-lora), serif;
   font-size: 1.125rem;
   color: var(--text-primary);
@@ -1502,6 +1504,15 @@ html {
   inset: 0;
   z-index: 100;
   pointer-events: none;
+  background: color-mix(in srgb, #0a0708 48%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  animation: rs-backdrop-fade 0.22s ease;
+}
+
+@keyframes rs-backdrop-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 .rs-panel {
@@ -1509,15 +1520,18 @@ html {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 280px;
-  background: var(--bg-surface);
-  border-left: 1px solid var(--border);
+  width: 300px;
+  background:
+    radial-gradient(120% 30% at 100% 0%, color-mix(in srgb, var(--haze-lavender) 12%, transparent), transparent 70%),
+    var(--bg-surface);
+  border-left: 1px solid color-mix(in srgb, var(--border) 200%, transparent);
   display: flex;
   flex-direction: column;
   gap: 0;
   overflow-y: auto;
   pointer-events: all;
-  animation: rs-slide-in 0.2s ease;
+  box-shadow: var(--shadow-floating);
+  animation: rs-slide-in 0.26s var(--ease-out);
 }
 
 @keyframes rs-slide-in {
@@ -1525,67 +1539,150 @@ html {
   to   { transform: translateX(0); }
 }
 
+/* Grab handle — only shown when the panel becomes a bottom sheet on mobile */
+.rs-handle {
+  display: none;
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  opacity: 0.6;
+  margin: 0.6rem auto 0.1rem;
+  flex-shrink: 0;
+}
+
 .rs-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1.15rem 1.35rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  /* engraved hairline: dark groove + light catch-light beneath */
+  border-bottom: 1px solid rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04);
   flex-shrink: 0;
 }
 
 .rs-title {
-  font-size: 0.85rem;
-  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-lora), serif;
+  font-size: 1.02rem;
+  font-weight: 600;
   color: var(--text-primary);
   letter-spacing: -0.01em;
 }
 
+/* small lamp-glow dot before the title */
+.rs-title::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--haze-cream), #c79a54 70%);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--haze-cream) 60%, transparent);
+}
+
 .rs-close {
-  background: none;
-  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 50%;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0.25rem;
+  font-size: 0.78rem;
   line-height: 1;
-  transition: color 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: color 0.15s, background 0.15s, transform 0.12s var(--ease-out);
 }
 
 .rs-close:hover {
-  color: var(--text-secondary);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+}
+
+.rs-close:active {
+  transform: scale(0.9);
 }
 
 .rs-section {
-  padding: 1.125rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 1.35rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.32);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.85rem;
+}
+
+.rs-section:last-child {
+  border-bottom: none;
+  box-shadow: none;
 }
 
 .rs-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  letter-spacing: 0.08em;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.12em;
   text-transform: uppercase;
+  font-weight: 500;
+}
+
+.rs-value {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  padding: 0.1rem 0.4rem;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .rs-presets {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.55rem;
+  flex-wrap: wrap;
 }
 
+/* Theme presets look like little book covers standing in a row */
 .rs-preset {
-  width: 44px;
-  height: 36px;
-  border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.08);
+  width: 46px;
+  height: 40px;
+  border-radius: 3px 5px 5px 3px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  /* page-edge highlight on the right, like a spine */
+  border-right: 2px solid rgba(255, 255, 255, 0.14);
   cursor: pointer;
-  font-size: 0.72rem;
+  font-family: var(--font-lora), serif;
+  font-size: 0.78rem;
   font-weight: 600;
-  transition: outline-offset 0.1s;
+  box-shadow: var(--shadow-raised);
+  transition: transform 0.14s var(--ease-spring), box-shadow 0.14s var(--ease-out), outline-offset 0.1s;
   outline-offset: 2px;
+}
+
+.rs-preset:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-floating);
+}
+
+.rs-preset:active {
+  transform: translateY(-1px) scale(0.97);
 }
 
 .rs-row {
@@ -1596,32 +1693,88 @@ html {
 .rs-color-label {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  font-size: 0.75rem;
+  gap: 0.4rem;
+  font-size: 0.72rem;
   color: var(--text-secondary);
+  letter-spacing: 0.04em;
   flex: 1;
 }
 
 .rs-color-input {
   width: 100%;
-  height: 2rem;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  height: 2.2rem;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 6px;
   cursor: pointer;
   background: none;
-  padding: 2px;
+  padding: 3px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+/* ----- Tactile brass slider: carved groove track + machined knob ----- */
 .rs-slider {
+  -webkit-appearance: none;
+  appearance: none;
   width: 100%;
-  accent-color: var(--text-secondary);
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.rs-slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.rs-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25));
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.7), 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.rs-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -7px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #f6e7c1 0%, #d2a85d 52%, #9c7536 100%);
+  border: 1px solid #7a5827;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+  transition: transform 0.1s var(--ease-out);
+}
+
+.rs-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, #f6e7c1 0%, #d2a85d 52%, #9c7536 100%);
+  border: 1px solid #7a5827;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.55);
+}
+
+.rs-slider:active::-webkit-slider-thumb {
+  transform: scale(1.14);
+}
+
+.rs-slider:active::-moz-range-thumb {
+  transform: scale(1.14);
+}
+
+.rs-slider:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .rs-slider-labels {
   display: flex;
   justify-content: space-between;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
 }
 
 .rs-slider-labels span:last-child {
@@ -1636,26 +1789,34 @@ html {
 
 .rs-font-btn {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.6rem 0.85rem;
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 7px;
   color: var(--text-secondary);
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.15s, color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.1s var(--ease-out);
 }
 
 .rs-font-btn.active {
-  border-color: var(--text-secondary);
+  border-color: color-mix(in srgb, var(--haze-cream) 40%, var(--border));
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--text-primary) 6%, var(--bg-elevated));
+  background: color-mix(in srgb, var(--haze-cream) 7%, var(--bg-elevated));
+  /* pressed-in, selected */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.45);
 }
 
 .rs-font-btn:hover:not(.active) {
   border-color: var(--text-muted);
   color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.rs-font-btn:active {
+  transform: translateY(0) scale(0.99);
 }
 
 /* Settings icon button in reader header */
@@ -1664,24 +1825,17 @@ html {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 38px;
+  height: 38px;
   background: var(--bg-elevated);
   border: 1px solid color-mix(in srgb, var(--border) 200%, transparent);
-  border-radius: 5px;
-  padding: 0.4rem 0.65rem;
+  border-radius: 8px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1;
-  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.12s var(--ease-out);
   flex-shrink: 0;
-  gap: 0.35rem;
-}
-
-.reader-settings-btn::after {
-  content: 'Settings';
-  font-size: 0.72rem;
-  letter-spacing: 0.03em;
-  color: inherit;
 }
 
 .reader-settings-btn:hover {
@@ -1690,36 +1844,51 @@ html {
   background: var(--bg-surface);
 }
 
+.reader-settings-btn:active {
+  transform: scale(0.92);
+}
+
 /* Music settings controls */
 
 .rs-music-controls {
   display: flex;
-  gap: 0.75rem;
+  gap: 0.7rem;
 }
 
 .rs-music-btn {
   flex: 1;
-  padding: 0.6rem;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 5px;
+  padding: 0.7rem;
+  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-surface));
+  border: 1px solid rgba(0, 0, 0, 0.32);
+  border-radius: 9px;
   color: var(--text-secondary);
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 2px 5px rgba(0, 0, 0, 0.3);
+  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s, transform 0.1s var(--ease-out);
   line-height: 1;
 }
 
 .rs-music-btn:hover {
-  background: var(--bg-elevated);
   border-color: var(--text-muted);
   color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.rs-music-btn:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 .rs-music-btn.active {
-  background: color-mix(in srgb, var(--mood-active) 20%, var(--bg-elevated));
-  border-color: var(--mood-active);
+  background:
+    radial-gradient(80% 80% at 50% 30%, color-mix(in srgb, var(--mood-active) 30%, var(--bg-elevated)), var(--bg-elevated)),
+    var(--bg-elevated);
+  border-color: color-mix(in srgb, var(--mood-active) 70%, var(--border));
   color: var(--mood-active);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 0 14px color-mix(in srgb, var(--mood-active) 30%, transparent);
 }
 
 .rs-warning-backdrop,
@@ -1730,27 +1899,103 @@ html {
   justify-content: center;
 }
 
+/* ----- Notice / warning notes: a warm card with an icon badge ----- */
 .rs-warning-modal,
 .rs-notice-modal {
+  --accent: var(--mood-active, #8b5cf6);
+  position: relative;
   pointer-events: all;
-  background: var(--bg-elevated);
-  border-radius: 8px;
-  padding: 1.25rem;
-  max-width: 320px;
+  text-align: center;
+  background:
+    radial-gradient(110% 70% at 50% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 62%),
+    linear-gradient(180deg, var(--bg-elevated), color-mix(in srgb, var(--bg-elevated) 70%, var(--bg-surface)));
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-top: 2px solid color-mix(in srgb, var(--accent) 70%, var(--border));
+  border-radius: 14px;
+  padding: 1.9rem 1.6rem 1.5rem;
+  max-width: 340px;
   width: 90%;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-floating);
+  animation: rs-modal-pop 0.28s var(--ease-spring);
 }
 
-.rs-warning-modal {
-  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
+.rs-warning-modal { --accent: #f0a500; }
+.rs-notice-modal  { --accent: var(--mood-active, #8b5cf6); }
+
+@keyframes rs-modal-pop {
+  from { opacity: 0; transform: scale(0.92) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.rs-notice-modal {
-  border: 1px solid color-mix(in srgb, var(--mood-active, #8b5cf6) 45%, var(--border));
+/* Circular icon badge, lit in the accent color */
+.rs-modal-badge {
+  position: relative;
+  display: block;
+  width: 46px;
+  height: 46px;
+  margin: 0 auto 0.85rem;
+  border-radius: 50%;
+  color: var(--accent);
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--accent) 28%, var(--bg-elevated)), var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 0 18px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+/* Pause glyph (two bars) for the music notice */
+.rs-badge-pause::before,
+.rs-badge-pause::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+.rs-badge-pause::before { left: calc(50% - 5px); }
+.rs-badge-pause::after  { left: calc(50% + 1px); }
+
+/* Exclamation glyph for the volume warning */
+.rs-badge-alert::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 13px;
+  width: 4px;
+  height: 12px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+.rs-badge-alert::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 28px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  transform: translateX(-50%);
+}
+
+.rs-modal-eyebrow {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--accent) 75%, var(--text-secondary));
+  margin: 0 0 0.3rem;
+  font-weight: 600;
 }
 
 .rs-warning-title,
 .rs-notice-title {
+  font-family: var(--font-lora), serif;
+  font-size: 1.15rem;
   font-weight: 600;
   color: var(--text-primary);
   margin: 0 0 0.5rem;
@@ -1758,40 +2003,113 @@ html {
 
 .rs-warning-text,
 .rs-notice-text {
-  font-size: 0.85rem;
+  font-size: 0.84rem;
   color: var(--text-secondary);
-  line-height: 1.5;
-  margin: 0 0 1rem;
+  line-height: 1.6;
+  margin: 0 auto 1.25rem;
+  max-width: 26ch;
 }
 
-.rs-notice-dismiss {
-  width: 100%;
-  padding: 0.6rem;
-  background: color-mix(in srgb, var(--mood-active, #8b5cf6) 20%, var(--bg-surface));
-  border: 1px solid color-mix(in srgb, var(--mood-active, #8b5cf6) 45%, var(--border));
-  border-radius: 5px;
-  color: var(--text-primary);
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.rs-notice-dismiss:hover {
-  background: color-mix(in srgb, var(--mood-active, #8b5cf6) 30%, var(--bg-surface));
-}
-
+.rs-notice-dismiss,
 .rs-warning-dismiss {
-  width: 100%;
-  padding: 0.6rem;
-  background: color-mix(in srgb, #f0a500 20%, var(--bg-surface));
-  border: 1px solid color-mix(in srgb, #f0a500 45%, var(--border));
-  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 7rem;
+  min-height: 44px;
+  padding: 0.6rem 1.6rem;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 32%, var(--bg-surface)),
+    color-mix(in srgb, var(--accent) 20%, var(--bg-surface)));
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--border));
+  border-radius: 9px;
   color: var(--text-primary);
   font-weight: 600;
+  font-size: 0.88rem;
   cursor: pointer;
-  transition: background 0.15s;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 3px 8px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s var(--ease-out), box-shadow 0.15s, background 0.15s;
 }
 
+.rs-notice-dismiss:hover,
 .rs-warning-dismiss:hover {
-  background: color-mix(in srgb, #f0a500 30%, var(--bg-surface));
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--accent) 42%, var(--bg-surface)),
+    color-mix(in srgb, var(--accent) 28%, var(--bg-surface)));
+  transform: translateY(-1px);
+}
+
+.rs-notice-dismiss:active,
+.rs-warning-dismiss:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+/* ===========================================================================
+   RESPONSIVE — tablet & mobile
+   Loosens spacing that ran tight on phones and turns the reader settings
+   drawers into bottom sheets. Breakpoints follow the 768 / 375 scale.
+   =========================================================================== */
+
+@media (max-width: 768px) {
+  /* --- Library: give the header and shelf room to breathe --- */
+  .library-header { padding: 0.75rem 1.1rem; }
+  .library-body { padding: 1.75rem 1.1rem; }
+  .bookcase { padding: 1.1rem 0.9rem 0.85rem; }
+  .btn-icon { padding: 0.55rem 0.8rem; min-height: 44px; }
+  .library-nav { gap: 0.45rem; }
+
+  /* --- Reader: comfortable column + 44px touch targets --- */
+  .reader-header { padding: 0.6rem 1rem; gap: 0.65rem; }
+  .reader-body {
+    padding-top: 2rem;
+    padding-bottom: 6rem;
+    padding-inline: max(1.25rem, calc((100% - var(--reader-max, 680px)) / 2));
+  }
+  .reader-settings-btn { width: 44px; height: 44px; font-size: 1.15rem; }
+  .reader-back { padding: 0.5rem 0; min-height: 44px; }
+  .mood-badge { bottom: 1.1rem; right: 1.1rem; }
+
+  /* --- Settings drawers become bottom sheets --- */
+  .rs-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 82vh;
+    border-left: none;
+    border-top: 1px solid color-mix(in srgb, var(--border) 200%, transparent);
+    border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background:
+      radial-gradient(80% 24% at 50% 0%, color-mix(in srgb, var(--haze-lavender) 14%, transparent), transparent 70%),
+      var(--bg-surface);
+    animation: rs-slide-up 0.3s var(--ease-out);
+  }
+
+  .rs-handle { display: block; }
+
+  .rs-section { padding: 1.1rem 1.25rem; }
+  .rs-music-btn { padding: 0.85rem; min-height: 48px; }
+  .rs-preset { width: 48px; height: 44px; }
+  .rs-slider { height: 28px; }
+  .rs-font-btn { padding: 0.7rem 0.85rem; min-height: 44px; }
+}
+
+@keyframes rs-slide-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@media (max-width: 375px) {
+  .library-header { padding: 0.7rem 0.85rem; }
+  .library-body { padding: 1.5rem 0.85rem; }
+  .library-heading h1 { font-size: 1.4rem; }
+  .reader-body {
+    padding-top: 1.5rem;
+    padding-bottom: 5rem;
+    padding-inline: max(1rem, calc((100% - var(--reader-max, 680px)) / 2));
+  }
+  .reader-title { font-size: 0.88rem; }
 }

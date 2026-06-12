@@ -30,6 +30,7 @@ export default function ReaderSettingsPanel({ settings, onChange, onClose }: Pro
   return (
     <div className="rs-backdrop">
       <div ref={panelRef} className="rs-panel" role="dialog" aria-label="Reader settings">
+        <span className="rs-handle" aria-hidden="true" />
         <div className="rs-header">
           <span className="rs-title">Reading settings</span>
           <button className="rs-close" onClick={onClose} aria-label="Close">✕</button>
@@ -85,7 +86,9 @@ export default function ReaderSettingsPanel({ settings, onChange, onClose }: Pro
         </section>
 
         <section className="rs-section">
-          <p className="rs-label">Font size — {settings.fontSize}px</p>
+          <p className="rs-label">
+            Font size <span className="rs-value">{settings.fontSize}px</span>
+          </p>
           <input
             type="range"
             min={14}
@@ -101,10 +104,12 @@ export default function ReaderSettingsPanel({ settings, onChange, onClose }: Pro
         </section>
 
         <section className="rs-section">
-          <p className="rs-label">Line width — {settings.contentWidth}px</p>
+          <p className="rs-label">
+            Line width <span className="rs-value">{settings.contentWidth}px</span>
+          </p>
           <input
             type="range"
-            min={400}
+            min={320}
             max={960}
             step={20}
             value={settings.contentWidth}

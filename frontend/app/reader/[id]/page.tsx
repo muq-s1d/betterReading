@@ -195,7 +195,9 @@ export default function ReaderPage() {
     fontSize: `${settings.fontSize}px`,
     color: settings.text,
     background: settings.bg,
-    maxWidth: `${settings.contentWidth}px`,
+    // Drives the measure (line width) via centering padding so it works on
+    // every screen size — including phones, where a fixed max-width can't.
+    ['--reader-max' as string]: `${settings.contentWidth}px`,
   }
 
   if (loading) {
@@ -309,9 +311,11 @@ export default function ReaderPage() {
       {autoplayBlocked && !autoplayNoticeDismissed && (
         <div className="rs-backdrop rs-notice-backdrop">
           <div className="rs-notice-modal" role="alertdialog" aria-label="Music paused">
+            <span className="rs-modal-badge rs-badge-pause" aria-hidden="true" />
+            <p className="rs-modal-eyebrow">Soundtrack</p>
             <p className="rs-notice-title">Music paused</p>
             <p className="rs-notice-text">
-              Your browser blocked the soundtrack from starting automatically. Open 🎵 Music
+              Your browser blocked the soundtrack from starting automatically. Open the 🎵 music
               settings and press play to resume.
             </p>
             <button className="rs-notice-dismiss" onClick={() => setAutoplayNoticeDismissed(true)}>
