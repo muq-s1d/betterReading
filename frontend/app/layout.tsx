@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Lora, DM_Sans, Merriweather, EB_Garamond, Source_Code_Pro } from "next/font/google";
 import "./globals.css";
 
@@ -31,6 +31,11 @@ const sourceCodePro = Source_Code_Pro({
 export const metadata: Metadata = {
   title: "betterReading",
   description: "AI-powered e-reader with adaptive mood music",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

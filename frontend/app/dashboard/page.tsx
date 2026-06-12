@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { isLoggedIn, clearToken } from '@/lib/auth'
 import { api } from '@/lib/api'
+import Shelf from '@/components/Shelf'
+import BookSpine from '@/components/BookSpine'
+import Skeleton from '@/components/Skeleton'
+import PageTransition from '@/components/PageTransition'
 
 interface Book {
   id: string
@@ -97,46 +101,58 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="library-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Loading…</p>
+      <div className="library-page">
+        <header className="library-header">
+          <span className="library-brand">betterReading</span>
+        </header>
+        <div className="library-body">
+          <div className="library-heading">
+            <h1>My Library</h1>
+          </div>
+          <Shelf>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="book-spine-skeleton" style={{ width: 48 + (i % 4) * 8 }} />
+            ))}
+          </Shelf>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="library-page">
-      <header className="library-header">
-        <span className="library-brand">betterReading</span>
-        <nav className="library-nav">
-          <button
-            onClick={() => fetchBooks()}
-            className="btn-icon"
-            disabled={refreshing}
-            aria-label="Refresh library"
-            title="Refresh"
-          >
-            {refreshing ? '…' : '↺'}
-          </button>
-          <Link href="/upload" className="btn-icon">+ Upload</Link>
-          <button onClick={handleLogout} className="btn-icon">Sign out</button>
-        </nav>
-      </header>
+    <PageTransition>
+      <div className="library-page">
+        <header className="library-header">
+          <span className="library-brand">betterReading</span>
+          <nav className="library-nav">
+            <button
+              onClick={() => fetchBooks()}
+              className="btn-icon"
+              disabled={refreshing}
+              aria-label="Refresh library"
+              title="Refresh"
+            >
+              {refreshing ? '…' : '↺'}
+            </button>
+            <Link href="/upload" className="btn-icon">+ Upload</Link>
+            <button onClick={handleLogout} className="btn-icon">Sign out</button>
+          </nav>
+        </header>
 
-      <div className="library-body">
-        <div className="library-heading">
-          <h1>My Library</h1>
-          {books.length > 0 && (
-            <span className="library-count">
-              {books.length} {books.length === 1 ? 'book' : 'books'}
-            </span>
+        <div className="library-body">
+          <div className="library-heading">
+            <h1>My Library</h1>
+            {books.length > 0 && (
+              <span className="library-count">
+                {books.length} {books.length === 1 ? 'book' : 'books'}
+              </span>
+            )}
+          </div>
+
+          {error && (
+            <p className="upload-error" style={{ marginBottom: '1.5rem' }}>{error}</p>
           )}
-        </div>
 
-        {error && (
-          <p className="upload-error" style={{ marginBottom: '1.5rem' }}>{error}</p>
-        )}
-
-        <div className="library-grid">
           {books.length === 0 ? (
             <div className="library-empty">
               <p className="library-empty-title">Your shelf is empty</p>
@@ -144,70 +160,23 @@ export default function Dashboard() {
               <Link href="/upload" className="btn-primary">Upload your first book</Link>
             </div>
           ) : (
-            books.map((book) => {
-              const isReady = book.status === 'ready'
-              const pct = progress[book.id] ?? 0
-              const isConfirming = confirmDeleteId === book.id
-
-              const card = (
-                <div key={book.id} className="book-card" style={{ cursor: isReady ? 'pointer' : 'default' }}>
-                  {isConfirming && (
-                    <div className="book-confirm-overlay" onClick={(e) => e.preventDefault()}>
-                      <div className="book-confirm-text">
-                        <strong>{book.title}</strong>
-                        Remove from library?
-                      </div>
-                      <div className="book-confirm-actions">
-                        <button
-                          className="book-confirm-cancel"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(null) }}
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          className="book-confirm-delete"
-                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteConfirm(book.id) }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    className="book-delete"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setConfirmDeleteId(book.id) }}
-                    aria-label={`Delete ${book.title}`}
-                  >
-                    ✕
-                  </button>
-                  <div className="book-glyph">{book.title.charAt(0).toUpperCase()}</div>
-                  <p className="book-title">{book.title}</p>
-                  {book.author && <p className="book-author">{book.author}</p>}
-                  <div className="book-meta">
-                    <span className="book-format">{book.file_format.toUpperCase()}</span>
-                    <span className={`book-status ${book.status}`}>
-                      <span className="book-status-dot" />
-                      {book.status}
-                    </span>
-                    <span className="book-size">{(book.file_size / 1024 / 1024).toFixed(1)} MB</span>
-                  </div>
-                  {isReady && pct > 0 && (
-                    <span className="book-progress-pct">{Math.round(pct)}% read</span>
-                  )}
-                </div>
-              )
-
-              return isReady ? (
-                <Link key={book.id} href={`/reader/${book.id}`} style={{ textDecoration: 'none', display: 'contents' }}>
-                  {card}
-                </Link>
-              ) : (
-                <div key={book.id} style={{ display: 'contents' }}>{card}</div>
-              )
-            })
+            <Shelf>
+              {books.map((book, index) => (
+                <BookSpine
+                  key={book.id}
+                  book={book}
+                  index={index}
+                  progressPct={progress[book.id] ?? 0}
+                  isConfirming={confirmDeleteId === book.id}
+                  onRequestDelete={() => setConfirmDeleteId(book.id)}
+                  onConfirmDelete={() => handleDeleteConfirm(book.id)}
+                  onCancelDelete={() => setConfirmDeleteId(null)}
+                />
+              ))}
+            </Shelf>
           )}
         </div>
       </div>
-    </div>
+    </PageTransition>
   )
 }
