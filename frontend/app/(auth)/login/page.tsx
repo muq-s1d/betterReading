@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       const data = await api.post<TokenResponse>('/auth/login', { email, password })
       setToken(data.access_token)
-      router.push('/')
+      router.replace('/dashboard')
     } catch (err: unknown) {
       setPassword('')
       const errMsg = err instanceof Error ? err.message : 'Login failed'
@@ -43,7 +43,8 @@ export default function LoginPage() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <h1>Sign in</h1>
+        <p className="auth-brand">betterReading</p>
+        <h1>Welcome back</h1>
         <form onSubmit={handleSubmit}>
           <label>
             Email

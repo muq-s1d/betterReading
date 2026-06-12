@@ -10,7 +10,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isLoggedIn()) {
-      router.push('/dashboard')
+      router.replace('/dashboard')
     }
   }, [router])
 

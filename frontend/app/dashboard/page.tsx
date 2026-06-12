@@ -72,7 +72,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      router.push('/login')
+      router.replace('/login')
       return
     }
     fetchBooks()
@@ -96,7 +96,7 @@ export default function Dashboard() {
 
   function handleLogout() {
     clearToken()
-    router.push('/login')
+    router.replace('/login')
   }
 
   if (loading) {

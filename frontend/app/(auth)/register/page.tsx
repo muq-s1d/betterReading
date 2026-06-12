@@ -37,7 +37,8 @@ export default function RegisterPage() {
   return (
     <main className="auth-page">
       <div className="auth-card">
-        <h1>Create account</h1>
+        <p className="auth-brand">betterReading</p>
+        <h1>Create your account</h1>
         <form onSubmit={handleSubmit}>
           <label>
             Email

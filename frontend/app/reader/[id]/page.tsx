@@ -63,7 +63,7 @@ export default function ReaderPage() {
 
   useEffect(() => {
     if (!isLoggedIn()) {
-      router.push('/login')
+      router.replace('/login')
       return
     }
     if (didLoadRef.current === bookId) return
