@@ -38,14 +38,6 @@ export default function Home() {
           <Link href="/register" className="btn-ghost">Get started</Link>
         </div>
       </div>
-
-      <div className="landing-footer">
-        <span className="landing-feat">PDF &amp; EPUB</span>
-        <span className="landing-sep">·</span>
-        <span className="landing-feat">NLP Analysis</span>
-        <span className="landing-sep">·</span>
-        <span className="landing-feat">Mood Music</span>
-      </div>
     </main>
   )
 }

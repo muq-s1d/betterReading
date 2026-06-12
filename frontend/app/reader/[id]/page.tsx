@@ -98,7 +98,15 @@ export default function ReaderPage() {
       if (savedScrollPct > 0) {
         requestAnimationFrame(() => {
           const max = document.documentElement.scrollHeight - window.innerHeight
-          if (max > 0) window.scrollTo({ top: (savedScrollPct / 100) * max, behavior: 'instant' })
+          if (max > 0) {
+            const top = (savedScrollPct / 100) * max
+            window.scrollTo({ top, behavior: 'instant' })
+            // Sync the smart-header baseline so this programmatic jump isn't
+            // read as the user "scrolling down" — otherwise a returning reader
+            // lands mid-book with the header (and its settings buttons) hidden.
+            lastScrollY.current = top
+            setHeaderShown(true)
+          }
         })
       }
     }
