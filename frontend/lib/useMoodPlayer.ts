@@ -32,6 +32,11 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
   const preloadCacheRef = useRef<Map<string, Howl>>(new Map())
   const moodChangeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const fadeIntervalsRef = useRef<Set<ReturnType<typeof setInterval>>>(new Set())
+  // Tracks of an old track currently fading out. They're no longer referenced
+  // by currentHowlRef/nextHowlRef, so without this set a fading-out track would
+  // be orphaned — left playing forever (e.g. after navigating to the library)
+  // or stacked on top of a new crossfade (two tracks at once).
+  const fadingHowlsRef = useRef<Set<Howl>>(new Set())
   const lastMoodRef = useRef(currentEmotion)
   const settingsRef = useRef(settings)
   settingsRef.current = settings
@@ -46,6 +51,7 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       howl.off()
       howl.stop()
       howl.unload()
+      fadingHowlsRef.current.delete(howl)
     }
   }
 
@@ -96,6 +102,13 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       nextTrackSrcRef.current = ''
     }
 
+    // Hard-stop any leftover tracks still fading out from an earlier,
+    // superseded crossfade. Without this they keep playing under the new
+    // track (two — or more — tracks at once). The current audible track is
+    // not in this set yet, so it survives to crossfade out smoothly below.
+    fadingHowlsRef.current.forEach((h) => cleanup(h))
+    fadingHowlsRef.current.clear()
+
     setState({ isLoading: true, currentTrackMood: newMood })
 
     // Reuse a prefetched instance if we already preloaded this track
@@ -145,6 +158,9 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
         trackInterval(fadeInInterval)
 
         if (oldHowl) {
+          // Track it while it fades so teardown / a superseding crossfade can
+          // still find and stop it (cleanup() removes it from the set).
+          fadingHowlsRef.current.add(oldHowl)
           const fadeOutInterval: ReturnType<typeof setInterval> = setInterval(() => {
             const current = oldHowl.volume()
             if (current > 0) {
@@ -330,6 +346,11 @@ export function useMoodPlayer(currentEmotion: string, settings: MusicSettings) {
       moodChangeTimeoutRef.current = null
       fadeIntervalsRef.current.forEach((id) => clearInterval(id))
       fadeIntervalsRef.current.clear()
+      // Stop any track still fading out — these aren't in current/next refs,
+      // so without this they'd keep looping after the reader unmounts (audio
+      // continuing to play once you're back on the library page).
+      fadingHowlsRef.current.forEach((howl) => cleanup(howl))
+      fadingHowlsRef.current.clear()
       cleanup(currentHowlRef.current)
       cleanup(nextHowlRef.current)
       currentHowlRef.current = null

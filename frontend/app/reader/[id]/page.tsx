@@ -60,6 +60,7 @@ export default function ReaderPage() {
   const docScrollPctRef = useRef(0)
   const lastScrollY = useRef(0)
   const didLoadRef = useRef<string | null>(null)
+  const lastSavedPctRef = useRef(0)
 
   useEffect(() => {
     if (!isLoggedIn()) {
@@ -140,6 +141,7 @@ export default function ReaderPage() {
   useEffect(() => {
     function saveProgress() {
       if (docScrollPctRef.current > 0) {
+        lastSavedPctRef.current = docScrollPctRef.current
         api.post(`/progress/${bookId}`, { scroll_percent: docScrollPctRef.current }, { keepalive: true }).catch(() => null)
       }
     }
@@ -155,6 +157,21 @@ export default function ReaderPage() {
       window.removeEventListener('pagehide', saveProgress)
       saveProgress()
     }
+  }, [bookId])
+
+  // Continuous autosave: persist progress every 10s while reading so it isn't
+  // lost if the page is killed without a clean unload (and so progress is saved
+  // as you read, not only when the tab is reloaded/closed). Only writes when
+  // the position has meaningfully moved since the last save.
+  useEffect(() => {
+    const id = setInterval(() => {
+      const pct = docScrollPctRef.current
+      if (pct > 0 && Math.abs(pct - lastSavedPctRef.current) > 0.5) {
+        lastSavedPctRef.current = pct
+        api.post(`/progress/${bookId}`, { scroll_percent: pct }).catch(() => null)
+      }
+    }, 10_000)
+    return () => clearInterval(id)
   }, [bookId])
 
   const handleVisible = useCallback((index: number) => {
