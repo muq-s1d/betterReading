@@ -1,4 +1,4 @@
-# betterReading 📚
+# betterReading 
 
 An e-reader that reads the *emotional tone* of your book as you scroll, and plays
 ambient music that matches the mood — built end-to-end with a Next.js frontend,
@@ -78,7 +78,7 @@ flowchart TB
 |---|---|
 | **Extraction** | `pdfplumber` (PDF) / `ebooklib` + BeautifulSoup (EPUB) → clean paragraphs |
 | **Chunking** | Paragraphs grouped into model-sized chunks for classification |
-| **Classification** | [`monologg/bert-base-cased-goemotions-original`](https://huggingface.co/monologg/bert-base-cased-goemotions-original) — 28-label GoEmotions model, run via 🤗 `transformers` |
+| **Classification** | [`monologg/bert-base-cased-goemotions-original`](https://huggingface.co/monologg/bert-base-cased-goemotions-original) — 28-label GoEmotions model, run via `transformers` |
 | **Mood mapping** | 28 raw emotions collapsed into 13 narrative moods (Joy, Excitement, Anticipation, Wonder/Awe, Mystery, Romance, Tenderness, Peace/Calm, Neutral, Sadness, Grief/Despair, Fear, Tension/Suspense, Anger, Disgust) |
 | **Confidence gate** | Low-confidence "Neutral" predictions fall back to the next-best non-neutral label |
 | **Smoothing** | Centered mode filter over a sliding window — kills one-off outlier chunks while still reacting to real mood shifts |
