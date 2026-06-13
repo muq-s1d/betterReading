@@ -18,11 +18,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [slow, setSlow] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     setLoading(true)
+    const slowTimer = setTimeout(() => setSlow(true), 4000)
     try {
       const data = await api.post<TokenResponse>('/auth/login', { email, password })
       setToken(data.access_token)
@@ -36,6 +38,8 @@ export default function LoginPage() {
         setError('Sign in failed. Please try again.')
       }
     } finally {
+      clearTimeout(slowTimer)
+      setSlow(false)
       setLoading(false)
     }
   }
@@ -88,6 +92,9 @@ export default function LoginPage() {
             </div>
           </label>
           {error && <p className="auth-error">{error}</p>}
+          {slow && !error && (
+            <p className="auth-hint">Waking up the server — this can take up to 20 seconds on the first request.</p>
+          )}
           <button type="submit" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>

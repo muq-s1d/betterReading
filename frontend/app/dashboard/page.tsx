@@ -167,16 +167,35 @@ export default function Dashboard() {
                   book={book}
                   index={index}
                   progressPct={progress[book.id] ?? 0}
-                  isConfirming={confirmDeleteId === book.id}
                   onRequestDelete={() => setConfirmDeleteId(book.id)}
-                  onConfirmDelete={() => handleDeleteConfirm(book.id)}
-                  onCancelDelete={() => setConfirmDeleteId(null)}
                 />
               ))}
             </Shelf>
           )}
         </div>
       </div>
+
+      {confirmDeleteId && (
+        <div className="rs-backdrop rs-warning-backdrop">
+          <div className="rs-warning-modal rs-confirm-modal" role="alertdialog" aria-label="Delete book">
+            <span className="rs-modal-badge rs-badge-alert" aria-hidden="true" />
+            <p className="rs-modal-eyebrow">Library</p>
+            <p className="rs-warning-title">Delete this book?</p>
+            <p className="rs-warning-text">
+              {books.find((b) => b.id === confirmDeleteId)?.title ?? 'This book'} will be removed
+              from your library. This can&apos;t be undone.
+            </p>
+            <div className="rs-confirm-actions">
+              <button className="rs-confirm-cancel" onClick={() => setConfirmDeleteId(null)}>
+                Cancel
+              </button>
+              <button className="rs-confirm-delete" onClick={() => handleDeleteConfirm(confirmDeleteId)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PageTransition>
   )
 }

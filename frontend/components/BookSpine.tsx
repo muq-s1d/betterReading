@@ -24,20 +24,14 @@ interface BookSpineProps {
   book: Book
   progressPct: number
   index: number
-  isConfirming: boolean
   onRequestDelete: () => void
-  onConfirmDelete: () => void
-  onCancelDelete: () => void
 }
 
 export default function BookSpine({
   book,
   progressPct,
   index,
-  isConfirming,
   onRequestDelete,
-  onConfirmDelete,
-  onCancelDelete,
 }: BookSpineProps) {
   const isReady = book.status === 'ready'
   const width = spineWidth(book.id)
@@ -89,29 +83,6 @@ export default function BookSpine({
         </span>
         {isReady && <span className="spine-progress-label">{Math.round(progressPct)}% read</span>}
       </div>
-
-      {isConfirming && (
-        <div className="spine-confirm-overlay" onClick={(e) => { e.preventDefault(); e.stopPropagation() }}>
-          <div className="spine-confirm-text">
-            <strong>{book.title}</strong>
-            Remove from library?
-          </div>
-          <div className="spine-confirm-actions">
-            <button
-              className="book-confirm-cancel"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onCancelDelete() }}
-            >
-              Cancel
-            </button>
-            <button
-              className="book-confirm-delete"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onConfirmDelete() }}
-            >
-              Delete
-            </button>
-          </div>
-        </div>
-      )}
     </motion.div>
   )
 
