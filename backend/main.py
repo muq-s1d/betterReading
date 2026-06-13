@@ -1,4 +1,5 @@
 import asyncio
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -17,9 +18,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="betterReading API", version="0.1.0", lifespan=lifespan)
 
+ALLOWED_ORIGINS = ["http://localhost:3000"]
+extra_origins = os.environ.get("CORS_EXTRA_ORIGINS", "")
+if extra_origins:
+    ALLOWED_ORIGINS.extend(origin.strip() for origin in extra_origins.split(",") if origin.strip())
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
